@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | `eac5475` | — | `chore: baseline magic-ui-dev as received` |
 | `28a315d` | Step 0 + 1 | `feat(hardware): docs, types, fake-data tree, Verstka assets` |
-| _(pending)_ | Step 2 | `feat(hardware): route / → /avaya, add demo entry route` |
+| `c21a71e` | Step 2 | `feat(hardware): route / → /avaya, add demo entry route` |
 
 ## Step status
 
