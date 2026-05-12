@@ -1,5 +1,5 @@
 // import * as React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +19,15 @@ export interface SidebarRightProps
   topSubsystemId?: string;
   sidebarMode: SidebarRightMode;
   category: "ecosystem" | "infrastructure" | undefined;
+  /**
+   * Optional slot overrides used by demo flows that want the same sidebar
+   * chrome but custom (non-API) content inside the tabs. Both slots are
+   * fully backward-compatible — when omitted, the production behaviour is
+   * preserved (chat + Options).
+   */
+  catalogSlot?: ReactNode;
+  chatSlot?: ReactNode;
+  defaultTab?: "magicAiAdvisor" | "team" | "options";
 }
 
 export function SidebarRight({
@@ -26,16 +35,19 @@ export function SidebarRight({
   topSubsystemId,
   sidebarMode,
   category,
+  catalogSlot,
+  chatSlot,
+  defaultTab = "magicAiAdvisor",
   ...props
 }: SidebarRightProps) {
   const { diagram } = useDiagram();
-  const [activeTab, setActiveTab] = useState<string>("magicAiAdvisor");
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
   useEffect(() => {
     if (sidebarMode === "options") setActiveTab("options");
 
-    return () => setActiveTab("magicAiAdvisor");
-  }, [sidebarMode]);
+    return () => setActiveTab(defaultTab);
+  }, [sidebarMode, defaultTab]);
 
   return (
     <Sidebar
@@ -54,7 +66,7 @@ export function SidebarRight({
       {...props}
     >
       <Tabs
-        defaultValue="magicAiAdvisor"
+        defaultValue={defaultTab}
         className="flex flex-col h-full gap-2.5"
         onValueChange={setActiveTab}
         value={activeTab}
@@ -77,7 +89,7 @@ export function SidebarRight({
             value="magicAiAdvisor"
             className="flex flex-col h-full data-[state=active]:flex data-[state=inactive]:hidden"
           >
-            <SidebarRightChat topSubsystemId={topSubsystemId} />
+            {chatSlot ?? <SidebarRightChat topSubsystemId={topSubsystemId} />}
           </TabsContent>
 
           <TabsContent
@@ -89,7 +101,7 @@ export function SidebarRight({
             </div>
           </TabsContent>
           <TabsContent value="options" className="p-[10px]">
-            <Options isSidebar category={category} />
+            {catalogSlot ?? <Options isSidebar category={category} />}
           </TabsContent>
         </SidebarContent>
       </Tabs>

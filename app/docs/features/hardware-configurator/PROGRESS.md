@@ -63,31 +63,54 @@ Verification:
 - `/login` still loads the login page; nothing pre-existing is broken.
 
 ### Step 3 — Screen A (multi-rack overview)
-**Status:** done.
+**Status:** done (revised after user feedback).
 
+#### Step 3.1 — Initial pass (superseded)
+What was built and why it was wrong:
+- Custom `SidebarLeft.tsx` / `SidebarRight.tsx` in `features/hardware/` — user feedback:
+  the project already has `~/components/sidebar-left.tsx` and `~/components/sidebar-right.tsx`;
+  the demo should reuse those and just feed them fake data, not introduce parallel components.
+- Blueprint grid background was scoped to a child element below `TopChrome` — looked like
+  the grid was not full-height.
+- `TopChrome` design didn't match the screenshots: light-blue breadcrumb, dark/black active
+  tab, and an unwanted `+` button next to the rack carousel.
+
+#### Step 3.2 — Revised (current)
 What:
-- `app/features/hardware/HardwareLayout.tsx` — 3-column shell `[260px | 1fr | 360px]`.
-- `app/features/hardware/SidebarLeft.tsx` — Magic logo, project header, lead score, Grand Total, Preview Proposal button, subsystem nav (project node + 6 children).
-- `app/features/hardware/SidebarRight.tsx` — `Magic AI Advisor / Team / Catalog` tabs (Catalog active); body lists `subsystemCategories` from `fake-data`.
-- `app/features/hardware/CatalogEntryCard.tsx` + `StatusBadge.tsx` — one catalog entry with status pill, 3 action buttons, description.
-- `app/features/hardware/Rack.tsx` — single rack with `Server_BG.png` frame + absolute-positioned `Server_Dell_0X.png` units. U-positioning derived from `positionU` / `sizeU`. Empty racks render with reduced opacity.
-- `app/features/hardware/TopChrome.tsx` — breadcrumb, Design/Questions/Price tabs (Design active), rack carousel control, `+` button. Brand pill omitted.
-- `app/features/hardware/ScreenA.tsx` — blueprint-grid canvas with 4 racks in a row + column labels.
-- `app/routes/avaya/index.tsx` — swap placeholder for `<HardwareLayout><ScreenA /></HardwareLayout>`.
-
-Animations (framer-motion):
-- Rack: `whileHover scale 1.03`, spring transition.
-- Sidebar buttons / nav items / catalog action buttons: subtle scale on hover + tap.
-- Screen mount: fade + scale-in on the canvas.
+- `app/features/hardware/adapter.ts` — translates `hardwareProject` into the shapes the existing
+  sidebars expect (`ProjectResponse`, `NavItem[]`, `IProjectPriceResponse`). Lead score 8.4/10
+  keeps `SidebarLeft` from redirecting to `/lead-score`. Grand Total reused as the (single) price.
+- `app/components/sidebar-right.tsx` — added 3 optional, backward-compatible props:
+  `catalogSlot?: ReactNode`, `chatSlot?: ReactNode`, `defaultTab?: ...`. Production behaviour
+  preserved when the slots are omitted; the hardware demo passes its own catalog body in.
+- `app/features/hardware/HardwareLayout.tsx` — now wraps in `DiagramProvider + SidebarProvider`
+  and renders the **existing** `<SidebarLeft />` and `<SidebarRight />` from `~/components/...`,
+  feeding them via the adapter. The catalog slot renders our `CatalogEntryCard` list.
+- DELETED `app/features/hardware/SidebarLeft.tsx` and `SidebarRight.tsx`.
+- `TopChrome.tsx` — redesigned:
+  * Navy breadcrumb pill (`#3a4a5f`) with light text — matches screenshot.
+  * White tabs pill with **blue** active state (`#2f7be5`), not black. Other tabs
+    transparent + slate-500.
+  * Rack carousel = white pill with `←` / bar indicator / `→`. **`+` button removed.**
+  * Whole chrome is `pointer-events-none absolute inset-x-0 top-0` so the grid sits behind it.
+- `ScreenA.tsx` — blueprint grid moved to the outer `<section>` so it covers the full
+  canvas height (including behind the top chrome). Racks row now uses an explicit
+  `h-[72vh]` band so `Rack` can rely on `h-full`.
+- `Rack.tsx` — container `aspectRatio` switched from `140/480` to `342/912` to match the actual
+  `Server_BG.png` pixel dimensions, so `object-fill` keeps the frame edges and the inner band
+  aligned to the rack's visible interior. Per-unit positioning is now a clean
+  `bottom = (positionU - 1) * (100 / heightU) %` inside the band. Unit images use
+  `object-fill` to fully occupy each slot.
 
 Tuning points:
-- `Rack.tsx` `TOP_INSET_PCT` / `BOTTOM_INSET_PCT` — adjust to visually fit unit area inside `Server_BG.png` cap/feet.
-- Rack width (140 px) and aspect ratio — adjust if racks look too thin or tall.
-- Image mapping `Server_Dell_01..04.png → R660/R760/Unity 380F/switches` per Q-A1 default.
+- `Rack.tsx` `TOP_INSET_PCT` (10), `BOTTOM_INSET_PCT` (9), side inset (`7%`) — tune if the
+  unit band edges drift off the visible rack interior.
+- `h-[72vh]` in `ScreenA` controls overall rack scale on Screen A.
 
 Verification:
-- `npx tsc --noEmit` clean.
-- HMR picked up the changes; visit `http://localhost:5173/` → redirects to `/avaya` and shows the 3-part layout with Screen A.
+- `ReadLints` clean on the changed files.
+- Vite HMR picked up every change, no compile/runtime errors.
+
 
 ### Step 4 — Screen B (single rack detail)
 **Status:** not started.

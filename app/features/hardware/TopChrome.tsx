@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { hardwareProject } from "./fake-data";
 
@@ -12,35 +12,37 @@ const TABS: { id: DesignTab; label: string }[] = [
 ];
 
 /**
- * Top chrome above the canvas:
- *  - breadcrumb,
- *  - Design / Questions / Price tabs,
- *  - rack-carousel control (decorative for now),
- *  - "+" placeholder (decorative).
+ * Top chrome that floats OVER the blueprint canvas:
+ *  - left:   navy breadcrumb pill
+ *  - left:   Design / Questions / Price tabs pill (Design active = blue)
+ *  - centre: rack-carousel control (decorative for now)
  *
- * No brand pill — confirmed removed.
+ * Background is transparent so the grid behind it is visible.
  */
 export function TopChrome() {
   return (
-    <div className="flex flex-col gap-3 px-6 pt-4">
-      <Breadcrumb />
-      <div className="flex items-center justify-between">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start gap-4 px-6 pt-4">
+      <div className="pointer-events-auto flex flex-col items-start gap-2">
+        <Breadcrumb />
         <Tabs />
-        <CarouselControl />
-        <div className="w-[140px]" />
       </div>
+
+      <div className="flex flex-1 items-center justify-center pt-1">
+        <CarouselControl />
+      </div>
+
+      {/* right slot intentionally empty — no "+" button */}
+      <div className="w-[120px]" />
     </div>
   );
 }
 
 function Breadcrumb() {
   return (
-    <div className="inline-flex w-fit items-center gap-2 rounded-md border border-blue-200 bg-blue-50/70 px-3 py-1.5 text-[13px] text-slate-700">
-      <span className="text-slate-500">Project</span>
+    <div className="pointer-events-auto inline-flex w-fit items-center gap-2 rounded-md bg-[#3a4a5f] px-3 py-1.5 text-[13px] shadow-sm">
+      <span className="text-slate-300">Project</span>
       <span className="text-slate-400">›</span>
-      <span className="font-medium text-slate-900">
-        {hardwareProject.name}
-      </span>
+      <span className="font-medium text-white">{hardwareProject.name}</span>
     </div>
   );
 }
@@ -48,17 +50,17 @@ function Breadcrumb() {
 function Tabs() {
   /* Design active by default — Step 5 will wire Questions / Price. */
   return (
-    <div className="inline-flex gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-sm">
+    <div className="pointer-events-auto inline-flex gap-1 rounded-md bg-white p-1 shadow-sm">
       {TABS.map((t) => (
         <button
           key={t.id}
           type="button"
           disabled={t.id !== "design"}
           className={cn(
-            "rounded-sm px-4 py-1.5 text-sm font-medium transition-colors",
+            "rounded-md px-5 py-1.5 text-sm font-medium transition-colors",
             t.id === "design"
-              ? "bg-slate-900 text-white"
-              : "text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed",
+              ? "bg-[#2f7be5] text-white shadow-sm"
+              : "bg-transparent text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed",
           )}
         >
           {t.label}
@@ -70,30 +72,21 @@ function Tabs() {
 
 function CarouselControl() {
   return (
-    <div className="flex items-center gap-3">
-      <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
-        <CarouselArrow direction="left" />
-        <div className="flex h-5 items-center gap-1 px-1">
-          {[2, 3, 4, 3, 2].map((h, i) => (
-            <span
-              key={i}
-              className="w-[3px] rounded-full bg-slate-400"
-              style={{ height: `${h * 4}px` }}
-            />
-          ))}
-        </div>
-        <CarouselArrow direction="right" />
+    <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 shadow-sm">
+      <CarouselArrow direction="left" />
+      <div className="flex h-5 items-center gap-1 px-2">
+        {[10, 14, 14, 10].map((h, i) => (
+          <span
+            key={i}
+            className={cn(
+              "w-[3px] rounded-full",
+              i === 1 || i === 2 ? "bg-[#2f4a73]" : "bg-[#a8b5c4]",
+            )}
+            style={{ height: `${h}px` }}
+          />
+        ))}
       </div>
-
-      <motion.button
-        type="button"
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.92 }}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-slate-700"
-        aria-label="Add"
-      >
-        <Plus className="h-4 w-4" />
-      </motion.button>
+      <CarouselArrow direction="right" />
     </div>
   );
 }
@@ -105,7 +98,7 @@ function CarouselArrow({ direction }: { direction: "left" | "right" }) {
       type="button"
       whileHover={{ scale: 1.15 }}
       whileTap={{ scale: 0.9 }}
-      className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:text-slate-700"
+      className="flex h-6 w-6 items-center justify-center rounded-full text-[#2f7be5] hover:text-[#1f5cc2]"
       aria-label={`${direction} rack`}
     >
       <Icon className="h-4 w-4" />
