@@ -1,13 +1,10 @@
 import { Navigate } from "react-router";
-import { ELocalStorageKey } from "~/constants/localstorage";
 
+/**
+ * Root entry. For the hardware-configurator demo we always land on /avaya.
+ * Login / dashboard routes remain reachable directly (e.g. /login) so the
+ * existing app keeps working for development.
+ */
 export default function Home() {
-  const isUserLoggedIn =
-    window.localStorage.getItem(ELocalStorageKey.IsUserLoggedIn) === "true";
-
-  if (isUserLoggedIn) {
-    return <Navigate to="/dashboard" />;
-  }
-
-  return <Navigate to="/login" />;
+  return <Navigate to="/avaya" replace />;
 }
