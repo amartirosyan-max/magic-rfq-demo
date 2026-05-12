@@ -19,14 +19,39 @@ type NavItem = {
   title: string;
   url: string;
   icon?: LucideIcon;
-  isActive?: boolean;
-  isSelected?: boolean;
-  items?: NavItem[];
+  isActive: boolean;
+  isSelected: boolean;
+  /** Domain id for the item (e.g. subsystem id). Used by `onItemSelect`. */
+  hr_uid: string | null;
+  items: NavItem[];
   category: string;
 };
 
-function NavMenuItem({ item, level = 0 }: { item: NavItem; level?: number }) {
-  const hasChildren = item.items && item.items.length > 0;
+/**
+ * When provided, the parent intercepts the click: `preventDefault()` runs and
+ * the callback fires with the clicked `item`. Routing is suppressed entirely,
+ * so the URL never changes — used by the hardware demo where the nav drives
+ * pure client-state selection instead of navigation.
+ */
+type OnItemSelect = (item: NavItem) => void;
+
+function NavMenuItem({
+  item,
+  level = 0,
+  onItemSelect,
+}: {
+  item: NavItem;
+  level?: number;
+  onItemSelect?: OnItemSelect;
+}) {
+  const hasChildren = item.items.length > 0;
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (onItemSelect) {
+      e.preventDefault();
+      onItemSelect(item);
+    }
+  };
 
   return (
     <Collapsible
@@ -45,7 +70,7 @@ function NavMenuItem({ item, level = 0 }: { item: NavItem; level?: number }) {
           }`}
         >
           <SidebarMenuButton asChild>
-            <Link to={item.url} tabIndex={0}>
+            <Link to={item.url} tabIndex={0} onClick={handleClick}>
               {item.icon && <item.icon />}
               <span>{item.title}</span>
             </Link>
@@ -59,16 +84,28 @@ function NavMenuItem({ item, level = 0 }: { item: NavItem; level?: number }) {
         {hasChildren && (
           <CollapsibleContent>
             <SidebarMenuSub>
-              {item.items!.map((subItem) => (
+              {item.items.map((subItem) => (
                 <SidebarMenuSubItem key={subItem.title}>
-                  {subItem.items && subItem.items.length > 0 ? (
-                    <NavMenuItem item={subItem} level={level + 1} />
+                  {subItem.items.length > 0 ? (
+                    <NavMenuItem
+                      item={subItem}
+                      level={level + 1}
+                      onItemSelect={onItemSelect}
+                    />
                   ) : (
                     <SidebarMenuSubButton
                       asChild
                       className={`${subItem.isSelected ? "bg-[var(--active-tab)] text-white hover:bg-[var(--active-tab)] hover:text-white" : ""}`}
                     >
-                      <Link to={subItem.url}>
+                      <Link
+                        to={subItem.url}
+                        onClick={(e) => {
+                          if (onItemSelect) {
+                            e.preventDefault();
+                            onItemSelect(subItem);
+                          }
+                        }}
+                      >
                         <span>{subItem.title}</span>
                       </Link>
                     </SidebarMenuSubButton>
@@ -83,12 +120,28 @@ function NavMenuItem({ item, level = 0 }: { item: NavItem; level?: number }) {
   );
 }
 
-export function NavMain({ items }: { items: NavItem[] }) {
+export function NavMain({
+  items,
+  onItemSelect,
+}: {
+  items: NavItem[];
+  /**
+   * Optional click interceptor — when provided, routing is suppressed and
+   * the callback fires with the clicked item. Used by demos that drive
+   * client-state selection from the sidebar nav.
+   */
+  onItemSelect?: OnItemSelect;
+}) {
   return (
     <SidebarGroup className="text-primary">
       <SidebarMenu>
         {items.map((item) => (
-          <NavMenuItem key={item.title} item={item} level={0} />
+          <NavMenuItem
+            key={item.title}
+            item={item}
+            level={0}
+            onItemSelect={onItemSelect}
+          />
         ))}
       </SidebarMenu>
     </SidebarGroup>

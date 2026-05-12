@@ -21,6 +21,10 @@ import type {
 /*  Chassis specs                                                              */
 /* -------------------------------------------------------------------------- */
 
+/* Power numbers (watts) are typical-load placeholders for the demo —
+ * good enough to make the hero card feel populated. BTU/hr is derived
+ * inline on the Screen C hero (watts × 3.412). */
+
 const r660Chassis: Chassis = {
   id: "chassis-r660",
   name: "Dell PowerEdge R660",
@@ -29,6 +33,7 @@ const r660Chassis: Chassis = {
   image: "Server_Dell_01.png",
   description:
     "1U two-socket rack server for dense database analytics and high-density virtualization.",
+  watts: 800,
 };
 
 const r760Chassis: Chassis = {
@@ -39,6 +44,7 @@ const r760Chassis: Chassis = {
   image: "Server_Dell_02.png",
   description:
     "2U two-socket rack server for mixed workload standardization, virtualization and analytics.",
+  watts: 1100,
 };
 
 const unity380fChassis: Chassis = {
@@ -49,6 +55,7 @@ const unity380fChassis: Chassis = {
   image: "Server_Dell_03.png",
   description:
     "2U dual-active-controller all-flash midrange storage array with 25 × 2.5\" drive slots.",
+  watts: 600,
 };
 
 const ds6610bChassis: Chassis = {
@@ -59,6 +66,7 @@ const ds6610bChassis: Chassis = {
   image: "Server_Dell_04.png",
   description:
     "1U 24-port 16Gb Fibre Channel SAN switch, rear-to-front airflow, single PSU.",
+  watts: 150,
 };
 
 const s5224fChassis: Chassis = {
@@ -69,6 +77,7 @@ const s5224fChassis: Chassis = {
   image: "Server_Dell_04.png",
   description:
     "1U 24 × 25GbE SFP28 + 4 × 100GbE QSFP28 ToR switch, IO to PSU airflow, dual PSU.",
+  watts: 200,
 };
 
 const n3248Chassis: Chassis = {
@@ -79,6 +88,7 @@ const n3248Chassis: Chassis = {
   image: "Server_Dell_04.png",
   description:
     "1U 48 × 1GbE + 4 × 10G SFP+ + 2 × 100G QSFP28 management switch, single AC PSU.",
+  watts: 120,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -254,18 +264,22 @@ const subsystems: Subsystem[] = [
 /*  Racks — U layout per DATA-ANALYSIS.md §8.1                                 */
 /* -------------------------------------------------------------------------- */
 
-/** Generate sequential 1U units for a server cluster, top-down. */
+/** Generate sequential same-size units for a server cluster, top-down.
+ *  `startIndex` lets us split a single subsystem across multiple racks
+ *  without colliding on unit IDs (e.g. half of the Hyper-v cluster in
+ *  Rack 01 → 1..7, the other half in Rack 02 → 8..14). */
 function fillCluster(
   subsystemId: string,
   count: number,
   startTopU: number,
   sizeU = 1,
+  startIndex = 1,
 ): RackUnit[] {
   const units: RackUnit[] = [];
   for (let i = 0; i < count; i++) {
     const positionU = startTopU - i * sizeU - (sizeU - 1);
     units.push({
-      id: `${subsystemId}-${i + 1}`,
+      id: `${subsystemId}-${startIndex + i}`,
       subsystemId,
       positionU,
       sizeU,
@@ -274,32 +288,38 @@ function fillCluster(
   return units;
 }
 
-/* Rack 01 — Hyper-v + Shared, 20U used.
- *  U42  N3248TE-ON         (Management Switch)
- *  U41  S5224F-ON #1       (ToR Switches)
- *  U40  DS-6610B #1        (SAN Switches)
- *  U39  DS-6610B #2        (SAN Switches)
- *  U38..U25  R660 × 14     (Hyper-v cluster)   — #1 topmost @ U38
- *  U24..U23  Unity 380F    (SAN Storage)       — 2U, positionU = 23
+/* Rack 01 — Hyper-v pod A + Shared storage, 12U used.
+ *  U42        N3248TE-ON         (Management Switch)
+ *  U41        S5224F-ON #1       (ToR Switches)
+ *  U40        DS-6610B #1        (SAN Switches)
+ *  U39..U33   R660 × 7           (Hyper-v cluster, half) — #1 topmost @ U39
+ *  U32..U31   Unity 380F         (SAN Storage)           — 2U, positionU = 31
+ *
+ * The 14-node Hyper-v cluster is intentionally split across the two racks
+ * so neither rack is overstuffed; the BoQ totals (14× R660, 1× Unity, etc.)
+ * are unchanged.
  */
 const rack01Units: RackUnit[] = [
   { id: "mgmt-switch-1", subsystemId: "mgmt-switch", positionU: 42, sizeU: 1 },
   { id: "tor-switches-1", subsystemId: "tor-switches", positionU: 41, sizeU: 1 },
   { id: "san-switches-1", subsystemId: "san-switches", positionU: 40, sizeU: 1 },
-  { id: "san-switches-2", subsystemId: "san-switches", positionU: 39, sizeU: 1 },
-  ...fillCluster("hyper-v-cluster", 14, 38, 1),
-  { id: "san-storage-1", subsystemId: "san-storage", positionU: 23, sizeU: 2 },
+  ...fillCluster("hyper-v-cluster", 7, 39, 1, 1),
+  { id: "san-storage-1", subsystemId: "san-storage", positionU: 31, sizeU: 2 },
 ];
 
-/* Rack 02 — VMware, 5U used.
- *  U42        S5224F-ON #2        (ToR Switches)
- *  U41..U40   R760 #1             (VMware cluster, 2U, positionU = 40)
- *  U39..U38   R760 #2             (VMware cluster, 2U, positionU = 38)
+/* Rack 02 — Hyper-v pod B + VMware, 13U used.
+ *  U42        S5224F-ON #2       (ToR Switches)
+ *  U41        DS-6610B #2        (SAN Switches)
+ *  U40..U34   R660 × 7           (Hyper-v cluster, second half, #8 @ U40)
+ *  U33..U32   R760 #1            (VMware cluster, 2U, positionU = 32)
+ *  U31..U30   R760 #2            (VMware cluster, 2U, positionU = 30)
  */
 const rack02Units: RackUnit[] = [
   { id: "tor-switches-2", subsystemId: "tor-switches", positionU: 42, sizeU: 1 },
-  { id: "vmware-cluster-1", subsystemId: "vmware-cluster", positionU: 40, sizeU: 2 },
-  { id: "vmware-cluster-2", subsystemId: "vmware-cluster", positionU: 38, sizeU: 2 },
+  { id: "san-switches-2", subsystemId: "san-switches", positionU: 41, sizeU: 1 },
+  ...fillCluster("hyper-v-cluster", 7, 40, 1, 8),
+  { id: "vmware-cluster-1", subsystemId: "vmware-cluster", positionU: 32, sizeU: 2 },
+  { id: "vmware-cluster-2", subsystemId: "vmware-cluster", positionU: 30, sizeU: 2 },
 ];
 
 const racks: Rack[] = [

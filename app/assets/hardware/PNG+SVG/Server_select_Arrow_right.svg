@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="15" viewBox="0 0 20 15">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #f7f2ec;
+        stroke: #0672cb;
+        stroke-linecap: round;
+        stroke-width: 2px;
+        fill-rule: evenodd;
+      }
+    </style>
+  </defs>
+  <path id="Shape_1019_copy" data-name="Shape 1019 copy" class="cls-1" d="M779.85,108h15.3m0.85,0-5-5m5,5-5,5" transform="translate(-778.282 -100.5)"/>
+</svg>

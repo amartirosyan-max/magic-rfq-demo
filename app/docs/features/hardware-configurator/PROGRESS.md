@@ -114,6 +114,25 @@ Verification:
 Commit:
 - `9761ab9` — `fix(hardware): reuse existing sidebars + fix Screen A chrome`.
 
+#### Step 3.3 — Left sidebar polish
+What:
+- Extended `~/components/sidebar-left.tsx` with 4 optional, backward-compatible props:
+  * `topSlot?: ReactNode` — content rendered above the project header card.
+  * `disableHeaderClick?: boolean` — kills the click-to-navigate behaviour + cursor-pointer.
+  * `hidePrimaryAction?: boolean` — hides the `Preview Proposal` / `Use cases` button.
+  * `priceOverride?: { label; value }` — replaces the "Price range: $X - $Y" block with
+    a single labelled value (e.g. "Grand Total: $644,475").
+- New `app/features/hardware/HardwareLogo.tsx` — `Logo.svg` mark + `Logo_text.svg`
+  wordmark lockup, used as the `topSlot`.
+- `HardwareLayout.tsx` now feeds the left sidebar:
+  * `topSlot={<HardwareLogo />}`
+  * `disableHeaderClick`
+  * `hidePrimaryAction`
+  * `priceOverride={{ label: "Grand Total:", value: formatToUSD(grandTotalUSD) }}`
+
+All four override props default to off, so the production project layout
+(`layouts/project.tsx`) renders unchanged.
+
 
 ### Step 4 — Screen B (single rack detail)
 **Status:** not started.
@@ -126,13 +145,44 @@ Plan:
 - framer-motion zoom-in transition from Screen A.
 
 ### Step 5 — Screen C (cluster component view)
-**Status:** not started.
+**Status:** in progress.
 
-Plan:
-- Click a subsystem (left sidebar) or a server row → `/avaya/subsystems/:subsystemId`.
-- Title: `{qty} × {chassis.name} — {subsystem.titleSuffix}`.
-- Component rows for the 5 surviving categories with `Component_*.png` icons.
-- Chassis hero card at the bottom (image + spec sentence + Watts/BTU placeholders for now).
+Trigger:
+- `selectedUnitId` is set (rack click) → resolved to its subsystem.
+- *or* `selectedSubsystemId` is set (left-sidebar click).
+- Otherwise: stay on Screen A.
+
+Layout (full canvas; replaces the rack carousel, blueprint background + TopChrome stay):
+- Top region: vertical list of `HardwareComponent` cards
+  * Lucide icon (category → `Cpu` / `MemoryStick` / `HardDrive` / `Network` / `Plug`).
+  * Title = `categoryLabel`, body = `description`, badge = `× qty`.
+- Bottom region: chassis hero card
+  * Big chassis image LEFT, title + description + cluster qty RIGHT.
+
+Animations (framer-motion):
+- Chassis hero slides up from below (spring).
+- Each component card emerges from *under* the hero with a staggered y → 0 + opacity fade, index-based delay. Visually feels like the parts "pop out" of the chassis.
+- Exit reverses the choreography.
+
+Refactor:
+- New `HardwareCanvas.tsx` owns the section wrapper + blueprint grid + TopChrome
+  and `AnimatePresence`-switches between `ScreenA` (rack carousel) and `ScreenC`.
+- `ScreenA.tsx` becomes the rack carousel body only.
+- `ScreenC.tsx` is new — chassis hero + component cards + animations.
+- `SelectionContext.selectSubsystem` now clears `selectedUnitId` so a sidebar
+  pick deterministically overrides any in-rack unit pick.
+- Route entry switches from `<ScreenA/>` to `<HardwareCanvas/>`.
+
+Selection → screen mapping:
+| state                                | screen   |
+| ------------------------------------ | -------- |
+| no unit, no subsystem                | Screen A |
+| unit selected (rack auto-selected)   | Screen C |
+| subsystem selected (from sidebar)    | Screen C |
+
+Click-outside on Screen C clears both `selectedUnitId` and
+`selectedSubsystemId`, dropping back to Screen A (rack stays selected if it
+was — `selectRack` only clears the unit, not itself).
 
 ### Step 6 — Right Catalog: product alternatives
 **Status:** not started.

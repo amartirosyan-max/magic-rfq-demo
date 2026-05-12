@@ -1,15 +1,17 @@
+import { HardwareCanvas } from "~/features/hardware/HardwareCanvas";
 import { HardwareLayout } from "~/features/hardware/HardwareLayout";
-import { ScreenA } from "~/features/hardware/ScreenA";
 
 /**
  * Hardware configurator demo entry.
- * Currently lands on Screen A (multi-rack overview).
- * See app/docs/features/hardware-configurator/PROGRESS.md.
+ *
+ * `HardwareCanvas` switches between Screen A (rack carousel) and Screen C
+ * (component detail) based on the current selection state. See
+ * `app/docs/features/hardware-configurator/PROGRESS.md` step 5.
  */
 export default function AvayaDemoEntry() {
   return (
     <HardwareLayout>
-      <ScreenA />
+      <HardwareCanvas />
     </HardwareLayout>
   );
 }

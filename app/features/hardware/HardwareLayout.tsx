@@ -1,15 +1,18 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { SidebarLeft } from "~/components/sidebar-left";
 import { SidebarRight } from "~/components/sidebar-right";
 import { DiagramProvider } from "~/context/DiagramContext";
+import formatToUSD from "~/utils/formatUSD";
 import { CatalogEntryCard } from "./CatalogEntryCard";
+import { HardwareLogo } from "./HardwareLogo";
 import {
   getFakeNavItems,
   getFakeProject,
   getFakeProjectPrice,
 } from "./adapter";
 import { hardwareProject } from "./fake-data";
+import { SelectionProvider, useSelection } from "./SelectionContext";
 
 /**
  * Three-column shell for the hardware configurator demo.
@@ -19,21 +22,55 @@ import { hardwareProject } from "./fake-data";
  * introduced. The catalog body inside the right sidebar is overridden with
  * the hardware subsystem-category list; the chat body is a friendly
  * placeholder for the demo.
+ *
+ * `SelectionProvider` wraps the whole shell so subsystem clicks in the
+ * nav are pure client state (no route change); children can read it via
+ * `useSelection()` to render Screens A/B/C accordingly.
  */
 export function HardwareLayout({ children }: { children: ReactNode }) {
+  return (
+    <SelectionProvider>
+      <HardwareLayoutInner>{children}</HardwareLayoutInner>
+    </SelectionProvider>
+  );
+}
+
+function HardwareLayoutInner({ children }: { children: ReactNode }) {
+  const { selectedSubsystemId, selectSubsystem } = useSelection();
   const project = getFakeProject();
   const projectPriceData = getFakeProjectPrice();
-  const navItems = getFakeNavItems();
+  const navItems = useMemo(
+    () => getFakeNavItems(selectedSubsystemId),
+    [selectedSubsystemId],
+  );
 
   return (
     <DiagramProvider>
       <SidebarProvider className="[--header-height:calc(--spacing(14))] overflow-hidden max-h-screen">
-        <div className="flex flex-1 gap-4 h-screen w-full">
+        <div className="flex flex-1 h-screen w-full">
           <SidebarLeft
             project={project}
             navItems={navItems}
             projectPriceData={projectPriceData}
-            className="h-screen border-r-0 p-4 pr-0"
+            className="h-screen border-r-0 p-4"
+            topSlot={<HardwareLogo />}
+            disableHeaderClick
+            hidePrimaryAction
+            priceOverride={{
+              label: "Grand Total:",
+              value: formatToUSD(hardwareProject.grandTotalUSD),
+            }}
+            onNavItemSelect={(item) => {
+              /* Top-level row (the project) clears the selection. */
+              if (!item.hr_uid) {
+                selectSubsystem(null);
+                return;
+              }
+              /* Toggle: clicking the already-selected row clears it. */
+              selectSubsystem(
+                item.hr_uid === selectedSubsystemId ? null : item.hr_uid,
+              );
+            }}
           />
 
           <SidebarInset className="flex flex-col h-screen min-w-0 bg-transparent">

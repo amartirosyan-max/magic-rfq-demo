@@ -67,16 +67,22 @@ export function getFakeProjectPrice(): IProjectPriceResponse {
 /**
  * Build the left-sidebar nav from `hardwareProject.subsystems`.
  *
- * Top-level row = the project itself, with each subsystem nested under it.
- * Routes are deep links into the demo. For step 3 they all point at /avaya;
- * later steps will fan out into /avaya/:subsystemId etc.
+ * Top-level row = the project itself; each subsystem is nested under it.
+ * `selectedSubsystemId` controls which sub-item renders with the "selected"
+ * highlight — passing `null` clears all sub selections (Screen A default).
+ *
+ * URLs are placeholders; the hardware demo intercepts clicks via
+ * `onItemSelect` on `<NavMain>`, so they never actually navigate.
  */
-export function getFakeNavItems(): NavItem[] {
+export function getFakeNavItems(
+  selectedSubsystemId: string | null = null,
+): NavItem[] {
   return [
     {
       title: hardwareProject.name,
       url: "/avaya",
       isActive: true,
+      /* Project row stays highlighted while we're in the Avaya demo. */
       isSelected: true,
       hr_uid: null,
       category: "infrastructure",
@@ -84,7 +90,7 @@ export function getFakeNavItems(): NavItem[] {
         title: s.name,
         url: `/avaya#${s.id}`,
         isActive: false,
-        isSelected: false,
+        isSelected: s.id === selectedSubsystemId,
         hr_uid: s.id,
         category: "infrastructure",
         items: [],

@@ -43,6 +43,33 @@ interface ISidebarLeftProps extends React.ComponentProps<typeof Sidebar> {
   }[];
   project?: ProjectResponse;
   projectPriceData?: IProjectPriceResponse;
+  /**
+   * Optional content rendered at the very top of the header (above the
+   * project info card). Used by the hardware demo for a logo lockup.
+   */
+  topSlot?: React.ReactNode;
+  /**
+   * Disable the click-through that navigates to the project page when the
+   * header card is clicked. Used by demo flows that should not route.
+   */
+  disableHeaderClick?: boolean;
+  /**
+   * Hide the `Preview Proposal` / `Use cases` button. Used by the hardware
+   * demo where the proposal action lives elsewhere.
+   */
+  hidePrimaryAction?: boolean;
+  /**
+   * When provided, replaces the "Price range: $min - $max" block with a
+   * single labelled value (e.g. `{ label: "Grand Total:", value: "$644,475" }`).
+   * Useful for demos that surface a single number instead of a range.
+   */
+  priceOverride?: { label: string; value: string };
+  /**
+   * When provided, nav item clicks call this callback instead of navigating.
+   * The URL never changes; the parent decides what to do with the selection
+   * (typically updating a selection context). Forwarded to `<NavMain>`.
+   */
+  onNavItemSelect?: (item: NavItem) => void;
 }
 
 export function SidebarLeft({
@@ -50,6 +77,11 @@ export function SidebarLeft({
   navItems,
   project,
   projectPriceData,
+  topSlot,
+  disableHeaderClick = false,
+  hidePrimaryAction = false,
+  priceOverride,
+  onNavItemSelect,
   ...props
 }: ISidebarLeftProps) {
   const navigate = useNavigate();
@@ -79,16 +111,24 @@ export function SidebarLeft({
   return (
     <Sidebar className={cn("border-r-0", className)} {...props}>
       <SidebarHeader>
+        {topSlot}
         <div
-          className="bg-[var(--chat-background)] flex flex-col items-center justify-center gap-2.5 p-4 cursor-pointer"
-          onClick={() => {
-            if (
-              project &&
-              project.creating_status !== CreatingStatus.IN_PROGRESS
-            ) {
-              navigate(`/projects/${project?.id}`, { replace: true });
-            }
-          }}
+          className={cn(
+            "bg-[var(--chat-background)] flex flex-col items-center justify-center gap-2.5 p-4",
+            !disableHeaderClick && "cursor-pointer",
+          )}
+          onClick={
+            disableHeaderClick
+              ? undefined
+              : () => {
+                  if (
+                    project &&
+                    project.creating_status !== CreatingStatus.IN_PROGRESS
+                  ) {
+                    navigate(`/projects/${project?.id}`, { replace: true });
+                  }
+                }
+          }
         >
           {!project ||
           project.creating_status === CreatingStatus.IN_PROGRESS ? (
@@ -165,17 +205,24 @@ export function SidebarLeft({
                   </TooltipContent>
                 </Tooltip>
               )}
-              {(projectPriceData?.price !== "0" ||
-                projectPriceData?.price_max !== "0") && (
+              {priceOverride ? (
                 <div className="flex flex-col items-center gap-1 text-black text-center text-base leading-[150%] ">
-                  <span>Price range:</span>
-                  {/*<span className="font-bold">$234,000 - $380,000</span>*/}
-                  <span className="font-bold">
-                    {projectPriceData?.price && +projectPriceData.price > 0
-                      ? `${formatToUSD(+projectPriceData.price * 0.8)} - ${formatToUSD(+projectPriceData.price * 1.3)}`
-                      : "Add more info for price estimation"}
-                  </span>
+                  <span>{priceOverride.label}</span>
+                  <span className="font-bold">{priceOverride.value}</span>
                 </div>
+              ) : (
+                (projectPriceData?.price !== "0" ||
+                  projectPriceData?.price_max !== "0") && (
+                  <div className="flex flex-col items-center gap-1 text-black text-center text-base leading-[150%] ">
+                    <span>Price range:</span>
+                    {/*<span className="font-bold">$234,000 - $380,000</span>*/}
+                    <span className="font-bold">
+                      {projectPriceData?.price && +projectPriceData.price > 0
+                        ? `${formatToUSD(+projectPriceData.price * 0.8)} - ${formatToUSD(+projectPriceData.price * 1.3)}`
+                        : "Add more info for price estimation"}
+                    </span>
+                  </div>
+                )
               )}
 
               {/*<div className="flex items-center gap-2 w-full relative h-12">*/}
@@ -189,28 +236,29 @@ export function SidebarLeft({
               {/*    Proposal Progress*/}
               {/*  </div>*/}
               {/*</div>*/}
-              {canPreviewProposal ? (
-                <Button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    navigate(`/projects/${project?.id}?tab=proposal`);
-                  }}
-                >
-                  Preview Proposal
-                </Button>
-              ) : (
-                <Button
-                  disabled={!isProjectCompleted}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    navigate(`/projects/${project?.id}?tab=use_cases`);
-                  }}
-                >
-                  Use cases
-                </Button>
-              )}
+              {!hidePrimaryAction &&
+                (canPreviewProposal ? (
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(`/projects/${project?.id}?tab=proposal`);
+                    }}
+                  >
+                    Preview Proposal
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={!isProjectCompleted}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(`/projects/${project?.id}?tab=use_cases`);
+                    }}
+                  >
+                    Use cases
+                  </Button>
+                ))}
             </>
           )}
         </div>
@@ -220,7 +268,10 @@ export function SidebarLeft({
         {/*<NavWorkspaces workspaces={data.workspaces} />*/}
         {/*<NavSecondary items={data.navSecondary} className="mt-auto" />*/}
         {/* <NavMain items={navItems} /> */}
-        <NavMain items={navItems as unknown as NavItem[]} />
+        <NavMain
+          items={navItems as unknown as NavItem[]}
+          onItemSelect={onNavItemSelect}
+        />
       </SidebarContent>
       <SidebarFooter className="p-0">
         <span className="text-sm text-left leading-[150%] text-[#949496]">

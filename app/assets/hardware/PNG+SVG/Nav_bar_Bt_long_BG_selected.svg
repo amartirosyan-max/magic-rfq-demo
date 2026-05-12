@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="87.124" height="33" viewBox="0 0 87.124 33">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #004883;
+        stroke: #dbdbdb;
+        stroke-width: 1px;
+        fill-rule: evenodd;
+      }
+    </style>
+  </defs>
+  <path id="Nav_bar_Bt_long_BG_selected" class="cls-1" d="M516.424,104.5h70.152a8,8,0,0,1,8,8v16a8,8,0,0,1-8,8H516.424a8,8,0,0,1-8-8v-16A8,8,0,0,1,516.424,104.5Z" transform="translate(-507.938 -104)"/>
+</svg>

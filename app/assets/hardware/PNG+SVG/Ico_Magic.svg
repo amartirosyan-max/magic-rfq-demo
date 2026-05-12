@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30.874" height="25.968" viewBox="0 0 30.874 25.968">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+        stroke: #000;
+        stroke-width: 2px;
+        fill-rule: evenodd;
+      }
+    </style>
+  </defs>
+  <path id="Polygon_2563_copy" data-name="Polygon 2563 copy" class="cls-1" d="M165,635.5a9.429,9.429,0,0,0-6.5,6.5,9.429,9.429,0,0,0-6.5-6.5,9.429,9.429,0,0,0,6.5-6.5A9.429,9.429,0,0,0,165,635.5Zm-15.754,8.6A6.16,6.16,0,0,0,145,648.345a6.16,6.16,0,0,0-4.243-4.242A6.159,6.159,0,0,0,145,639.86,6.159,6.159,0,0,0,149.243,644.1Z" transform="translate(-137.438 -625.688)"/>
+</svg>
