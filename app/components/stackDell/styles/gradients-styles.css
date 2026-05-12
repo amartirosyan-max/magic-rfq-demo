@@ -1,0 +1,160 @@
+.data-block::before {
+  background: radial-gradient(
+    230px circle at var(--x) var(--y),
+    rgba(64, 120, 255, 0.45),
+    rgba(13, 33, 85, 0.15),
+    transparent 70%
+  );
+  clip-path: inherit;
+  pointer-events: none;
+  z-index: -100;
+}
+
+.diagram-loader-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  isolation: isolate;
+  z-index: 2;
+}
+
+.diagram-loader-overlay--ready {
+  z-index: 2;
+}
+
+.diagram-loader-overlay--loading {
+  z-index: 3;
+}
+
+.diagram-loader-arrow {
+  --diagram-loader-width: clamp(88px, 9.5vw, 136px);
+  --diagram-loader-tip: min(calc(50% - 2px), 32px);
+  --diagram-loader-fill: rgb(98 213 255 / 40%);
+  --diagram-loader-edge-shadow: rgb(6 28 77 / 16%);
+  --diagram-loader-edge-highlight: rgb(205 242 255 / 16%);
+  position: absolute;
+  inset-block: 0;
+  left: calc(var(--diagram-loader-width) * -0.88);
+  width: var(--diagram-loader-width);
+  background: var(--diagram-loader-fill);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--diagram-loader-tip)) 0,
+    100% 50%,
+    calc(100% - var(--diagram-loader-tip)) 100%,
+    0 100%,
+    var(--diagram-loader-tip) 50%
+  );
+  box-shadow:
+    inset 0 0 0 1px var(--diagram-loader-edge-highlight),
+    inset 0 0 12px var(--diagram-loader-edge-shadow),
+    0 0 6px rgb(68 190 255 / 10%);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  opacity: 0.94;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.diagram-loader-arrow--ready {
+  --diagram-loader-fill: rgb(98 213 255 / 22%);
+  --diagram-loader-edge-shadow: rgb(6 28 77 / 10%);
+  --diagram-loader-edge-highlight: rgb(205 242 255 / 10%);
+  opacity: 0.5;
+}
+
+.diagram-enter-y,
+.diagram-enter-x {
+  animation-duration: 0.4s;
+  animation-fill-mode: both;
+  animation-timing-function: ease-out;
+}
+
+.diagram-enter-y {
+  animation-name: diagram-enter-y;
+}
+
+.diagram-enter-x {
+  animation-name: diagram-enter-x;
+}
+
+@keyframes diagram-enter-y {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes diagram-enter-x {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diagram-enter-y,
+  .diagram-enter-x {
+    animation: none;
+  }
+}
+
+.use-cases-block::before {
+  background: radial-gradient(
+    230px circle at var(--x) var(--y),
+    #269bff,
+    #0972cb,
+    transparent 70%
+  );
+  clip-path: inherit;
+  pointer-events: none;
+  z-index: -100;
+}
+
+.infrastructure-block::before {
+  background: radial-gradient(
+    230px circle at var(--x) var(--y),
+    #4280f5,
+    #1d56c1,
+    transparent 70%
+  );
+  clip-path: inherit;
+  pointer-events: none;
+  z-index: -100;
+}
+
+.ecosystem-block::before {
+  background: radial-gradient(
+    230px circle at var(--x) var(--y),
+    #1549e3,
+    #0c32a4,
+    transparent 70%
+  );
+  clip-path: inherit;
+  pointer-events: none;
+  z-index: -100;
+}
+
+.services-block::before {
+  background: radial-gradient(
+    230px circle at var(--x) var(--y),
+    #023ee5,
+    #00217e,
+    transparent 70%
+  );
+  clip-path: inherit;
+  pointer-events: none;
+  z-index: -100;
+}

@@ -1,0 +1,17 @@
+export enum EQueryKey {
+  PROJECTS = "projects",
+  PROJECT_SUBSYSTEM = "project_subsystem",
+  PROJECT_TREE = "project_tree",
+  SUBSYSTEM_BILLING = "subsystem_billing",
+  TOP_PRODUCTS = "top_products",
+  PROJECT_DATA = "project_data",
+  PROJECT_PRICE_DATA = "project_price_data",
+  PROJECT_SUBSYSTEM_BY_HR_ID = "project_subsystem_by_hr_id",
+  PROJECT_SUBSYSTEM_SHORT = "project_subsystem_short",
+  USE_CASES = "use_cases",
+  USE_CASES_GENERATED = "use_cases_generated",
+  USERS = "users",
+  PROJECT_PROPOSAL_FEEDBACK = "project_proposal_feedback",
+  FEEDBACK_HISTORY = "feedback_history",
+  PRODUCT_REQUESTS = "product_requests",
+}
