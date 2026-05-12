@@ -1,0 +1,534 @@
+
+
+                                        
+
+                                 Avaya POD cluster – IPO200
+Technical Proposal
+
+
+
+Document Reference – 
+Table of Contents
+1	Executive Summary	3
+2	Business Needs and requirement	4
+3	Proposed Solution	5
+3.1	Solution summary	5
+3.2	Proposed Solution Diagram	9
+4	Proposed Technology	10
+4.1	Dell PowerEdge R660	10
+4.2	Dell PowerEdge R760	11
+4.3	Dell EMC Unity XT Family	13
+4.4	Dell EMC Connectrix Family	15
+4.5	Dell EMC PowerSwitch N3200-ON Series Switches	16
+4.6	Dell EMC PowerSwitch S5200-ON Series	20
+5	Bill of Quantities	27
+5.1	PowerEdge R660 Server [Hyper-V Cluster Servers]	27
+5.2	PowerEdge R760 Servers [VMware Cluster Servers]	27
+5.3	Dell EMC Switch Unity 380F	28
+5.4	Connectrix DS-6610B SAN Switches	28
+5.5	Dell EMC_ S5224F ToR Switches	28
+5.6	Dell EMC_N3248_Managment Switch	29
+6	Professional services	30
+
+
+
+
+
+
+
+
+
+
+	•	Executive Summary
+
+	•	Business Needs and requirement 
+Their main applications, database, and file systems are running on …………………
+In accelerating modern technologies, businesses, and organizations like ......................................, the requirement must respond more quickly to deliver outstanding customer and user experiences and be competitive. The inability of IT to respond to new demands, whether it be the adoption of new technologies to meet business requirements or addressing new business requirements with the existing low-performance technology standards, creates significant frustration internally and externally and Data availability, performance and reliability are crucial to running their applications without any service interruption for their users.
+Therefore, the customer is looking for a new Datacenter tech refresh to overcome these challenges. Our prime objective is to provide a modernized Data centre infrastructure with a highly scalable, available, performance driven and centrally manage solution understanding their existing and fulfilling future requirement as well. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	•	Proposed Solution
+	•	Solution summary
+Based on ......................................’s requirements, future upgrades, and business needs, we are proposing the below solution.
+As requested by the customer, we have proposed two isolated clusters: a 14-node Windows Hyper-V cluster and a 2-node VMware cluster. Both clusters will connect to the Dell EMC Unity SAN storage via FC SAN switches. The customer's generic data path will be managed by 2 x 25G ToR switches. One switch will be used as a management switch for remote management purposes.
+The proposed solution consists of the following key components:
+	•	14 x Dell EMC R660 servers for Hyper-v cluster
+	•	2 x Dell EMC R760 servers for VMware cluster
+	•	2 x Dell S5224F network switches – ToR switches
+	•	1 x Dell N3248 Management Switch
+	•	2 x Brocade 6610B 24 port FC SAN Switches
+	•	Dell EMC Unity 380 All Flash for Shared Storage
+	•	APC NetShelter 42U Deep Rack
+	•	2 x APC PDU AP7553 32A 230V 
+
+14 x Dell EMC R660 servers for Hyper-V cluster Configuration summary
+Processor
+2 x Intel Xeon Gold 6548Y+ 2.5G, 32C/64T
+Memory 
+ 4 x 32GB RDIMM, 5600MT/s, Dual Rank
+Storage drives 
+2 x 480GB SSD SATA Read Intensive 6Gbps
+Network ports
+2x  10/25GbE SFP28
+Fiber Channel Switches
+2 x 32 Fibre Channel HBA
+
+
+
+
+
+
+2 x Dell EMC R760 servers for VMware cluster
+Processor
+2 x Intel Xeon Platinum 8568Y+ 2.3G, 48C/96T
+Memory 
+8x 32GB RDIMM, 5600MT/s, Dual Rank
+Storage drives 
+2 x 480GB SSD SATA Read Intensive 6Gbps
+Network ports
+2x  10/25GbE SFP28
+Fiber Channel Switches
+2 x 32 Fibre Channel HBA
+
+Unity XT 380F
+Base
+Unity XT 380F DPE 25x2.5" Dell Field Rack
+SSD Drives
+14 x Unity 3.84TB ALL FLASH
+Controller ports
+Unity CNA 4x16Gb FC SFPs AF
+
+
+2 x Dell S5224F network switches
+Dell EMC Switch S4128F-ON
+Dell EMC S5224F-ON Switch, 24x 25GbE SFP28, 4x 100GbE QSFP28 ports, IO to PSU air, 2x PSU
+Network ports 
+2 x Dell Networking, Transceiver, SFP+, 10GbE, SR, 850nm Wavelength, 300m Reach
+Network Cables
+16 x Dell Networking, Cable, SFP28 to SFP28, 25GbE,Passive Copper Twinax Direct Attach Cable,5 Meter
+Network Cables
+2 x Dell Networking Cable, OM4 LC/LC Fiber Cable, (Optics required), 10 Meter
+Stack cables
+Dell Networking Cable, 100GbE QSFP28 to QSFP28, Passive Copper Direct Attach Cable, 0.5 Meter
+
+
+
+
+2 x Dell 6610B SAN switches
+Dell EMC Switch S4128F-ON
+Connectrix DS-6610B-L 8/24P switch, (incl 8x16Gb SFPs+rack mount kit)
+Additional ports 
+2 x Connectrix DS-6610B 8 Port 16G SFP Port on Demand Upgrade Kit
+FC cables
+20 x OM4 LC/LC Multi Mode Fiber Cable (optics required), 5 Meter
+
+Hyper-V cluster summary 
+Overall, the proposed system provides 896 physical CPU cor	es configured from the entire cluster. 832 physical cores available when one node failure is considered from the entire cluster. We have designed 1:1 and 1:2 physical-to-virtual ratio based on detail sheet given by the Avaya team. From the RAM perspective, it has configured 1.8TB RAM from the entire cluster and 1.6TB RAM can use one node failure situation.  According to the given requirement, the system is designed to have CPU and memory to withstand single-node failure without any performance degradation.
+The Virtualization solution is the basement of the 14 node High Availability Cluster Solution. Windows server 2022 will install on physical hosts and deploying Hyper-V HA cluster using Dell EMC Unity 380XT SAN Storage connecting via brocade SAN switches.
+All servers are designed with 2x dual-port 32 Gbps Fiber channel HBA cards that facilitate SAN Storage connectivity and Dual port 25G Data traffic connecting through the S5224 ToR Switches. 
+VMware cluster summary 
+Overall, the proposed system provides 192 physical CPU cores configured from the entire cluster. 96 physical cores available when one node failure is considered from the entire cluster. We have designed 1:1 and 1:2 physical-to-virtual ratio based on detail sheet given by the Avaya team. From the RAM perspective, it has configured 512GB RAM from the entire cluster and 256GB RAM can use one node failure situation.  According to the given requirement, the system is designed to have CPU and memory to withstand single-node failure without any performance degradation.
+The Virtualization solution is the basement of the Three node High Availability Cluster Solution. VMware ESXi hypervisor will install on physical hosts and deploying VMware HA cluster with the Dell Unity 380XT SAN Storage. To centrally manage the cluster and entire virtual infrastructure VMware vCenter server will host inside VMware HA Cluster as a Virtual Machine. High availability and all other advanced features can be configured using the vCenter virtual appliance. 
+All servers are designed with 2x dual-port 32 Gbps Fiber channel HBA cards that facilitate SAN Storage connectivity and VMware Data traffic connecting through the customer given ToR Switches. 
+
+
+Storage summary
+The proposed storage consists of 14 x 3.84 TB SSD drives, and we have considered two main Clusters to meet the capacity requirements in the Avaya. 
+Unity XT HFAs enable IT to cost effectively consolidate and manage traditional file and transactional workloads with several VMware and Microsoft virtualization integrations – to meet the economics, scale, performance and data protection needs of the data center.
+From a performance perspective, Unity 380XT can deliver 65000 IOPS at 2ms latency to meet the performance requirements. Furthermore, the Unity 380XT provides Unified architecture, and the entire appliance has 128GB of cache memory, which helps deliver fast I/O response for applications, enhancing the performance of the designed solution. Moreover, Unity 380XT operates with active-active FC controller connectivity, ensuring hardware availability in the storage system.
+Furthermore, Unity 380XT storage and hosts servers will connect the 24 port 16G FC SAN switches to delivers more performance and availability.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	•	Proposed Solution Diagram
+
+
+
+	•	Proposed Technology – Generated by Dell proposal tool
+	•	Dell PowerEdge R660
+Provides performance and versatility as needed to address your most demanding applications
+The new Dell PowerEdge R660 is a 1U, two-socket rack server. Gain the performance you need with this full-featured enterprise server, designed to optimize even the most demanding workloads like dense database analytics and high-density virtualization.
+
+The latest generation of Dell PowerEdge Servers, including the R660, help you "Accelerate Transformation Anywhere" with technology and solutions that help you innovate, adapt, and grow so you can:
+	•	Accelerate AI-Driven Innovations
+	•	Accelerate Automation
+	•	Accelerate Zero Trust Adoption
+These systems and software enable you to modernize from the edge to the cloud by unleashing your possibilities with purpose-built compute, improve your operational efficiencies by limiting errors and freeing up resources with autonomous computing, and reinforce your security with built-in protection, continuous monitoring, detection and timely mitigation.
+System Features
+The PowerEdge R660 system features:
+	•	Up to two 4th Generation Intel Xeon Scalable or Intel Xeon Max processors with up to 56 cores or two 5th Generation Intel Xeon Scalable processors up to 64 cores for faster and more accurate processing performance.
+	•	Up to 32 RDIMMs with up to 8 TB of memory and speed up to 4800 MT/s
+	•	Optional Direct Liquid Cooling
+	•	Two redundant AC or DC power supply units
+	•	Up to 10 x 2.5-inch or 8 x 2.5-inch SATA/SAS/NVMe (HDD/SSD) drives
+	•	Also supports 14 x E3.S or 16 x E3.S drives
+Key workloads
+The versatile R660 is designed to address data-intensive, diverse workloads including:
+	•	High Density Virtualization
+	•	Dense Database Analytics(VDI)
+	•	Mixed Workload Standardization
+
+
+
+
+
+
+PowerEdge R660 Technical Specifications
+Click here to see the full PowerEdge R660 Specification Sheet.
+
+	•	Dell PowerEdge R760
+Provides performance and versatility as needed to address your most demanding applications
+The new Dell PowerEdge R760 is a 2U, two-socket rack server. Gain the performance you need with this full-featured enterprise server, designed to optimize even the most demanding workloads like Artificial Intelligence and Machine Learning.
+
+The latest generation of Dell PowerEdge Servers, including the R760, help you "Accelerate Transformation Anywhere" with technology and solutions that help you innovate, adapt, and grow so you can:
+	•	Accelerate AI-Driven Innovations
+	•	Accelerate Automation
+	•	Accelerate Zero Trust Adoption
+These systems and software enable you to modernize from the edge to the cloud by unleashing your possibilities with purpose-built compute, improve your operational efficiencies by limiting errors and freeing up resources with autonomous computing, and reinforce your security with built-in protection, continuous monitoring, detection and timely mitigation.
+System Features
+The PowerEdge R760 system features:
+	•	Up to two 4th Generation Intel Xeon Scalable or Intel Xeon Max processors with up to 56 cores or two 5th Generation Intel Xeon Scalable processors with up to 64 cores for faster and more accurate processing performance.
+	•	Optional Direct Liquid Cooling for required CPU SKU and/or configurations
+	•	32 DDR5 DIMM slots
+	•	Two redundant AC or DC power supply units
+	•	Up to 12 x 3.5-inch SAS/SATA, or 24 x 2.5-inch, 16 x 2.5-inch, 8 x 2.5-inch, or 2 x 2.5-inch(rear), 4 x 2.5-inch(rear) SAS, SATA, or NVMe (HDD/SSD) drives
+	•	PCI Express (PCIe) 5.0 enabled expansion slots
+	•	Network interface technologies to cover Network Interface Card (NIC)
+Key workloads
+The Dell PowerEdge R760 offers powerful performance in a purpose-built, cyber resilient, mainstream server. Ideal for:
+	•	Mixed Workload Standardization
+	•	Database and Analytics
+	•	Virtual Desktop Infrastructure
+	•	Artificial Intelligence and Machine Learning
+
+
+
+
+PowerEdge R760 Technical Specifications
+Click here to see the full PowerEdge R760 Specification Sheet.
+
+
+	•	Dell EMC Unity XT Family
+Dell EMC Unity XT arrays are designed for performance, optimized for efficiency and built for a multi-cloud world. They are known for simplicity, reliability and availability with flexible deployment options and affordable prices – to meet the needs of resource-constrained IT professionals in large, small and remote organizations.
+Unity XT arrays are available as purpose-built All-Flash or Hybrid physical appliances, as a software-defined storage virtual appliance for on-prem and for in the cloud, and as part of a VxBlock converged infrastructure system. With simplified ordering, all-inclusive software, differentiated features, intuitive management, and a modern design, Unity XT provides no compromise midrange storage.
+Designed for performance and optimized for efficiency
+Engineered from the ground-up to meet market demands for performance, efficiency and lifecycle simplicity, Unity XT Storage Arrays implement a dual-active controller architecture and implement dual socket Intel processors with more cores and system memory. All these modern features enable Unity XT to deliver up to 2X performance compared to previous generations and are powerful enough to replace older generation VNX7600 and VNX8000 systems.
+Unity XT also provides significant efficiency gains. These arrays reduce system overhead up to 85%, providing more usable capacity for your investment. When you turn on inline data reduction you will be guaranteed a 3:1 DRR with no assessment via our Future Proof Program. Unity XT also includes an efficient self-service migration utility right from Unisphere, CLI and REST API to seamlessly migrate file and block data from legacy Dell EMC products and select competitive systems.
+Whether you are looking to start small or scale to hundreds of terabytes of usable capacity, these high performant modern storage systems have you covered.
+
+
+Flash design
+Unity XT storage starts in a sleek 2U form factor with a modern and dual-active controller architecture designed to provide flash performance. The design includes linear multicore scaling, inline data reduction with zero detect for block and file, zero impact drive firmware-based garbage collection, write coalescing minimizing IO, and intelligent wear leveling capabilities, high density SSD’s including 15.36TB drives. A high-density enclosure is separately available and supports eighty flash drives in just three rack units, for even greater space efficiency.
+Unity XT storage arrays are designed to be:
+	•	Modern: 2U, ; scalable up to 1500 drives and ready to support virtual applications, cloud implementations, containerized workloads, Dev/Ops and more
+	•	Powerful: Dual-socket Intel™ CPUs, dual active controllers, more cores and memory drive up to 2X more performance with less latency
+	•	Efficient: Higher system efficiency and 3:1 guarantees DRR that delivers more effective usable capacity lowering TCO
+	•	Simple: Installs and configures in 25 minutes with intuitive easy-to-use web-based (HTML5) management
+	•	Flexible: Deploy as physical, software defined or converged infrastructure systems – all sharing one OS and management GUI
+Unity XT storage arrays provide you with the following benefits:
+	•	Performance: Experience up to 2X more performance across Reads, Writes and Mixed R/W workloads 
+	•	Consolidation: Consolidate all your mixed workloads (file, block, VMware vVOLs) onto a single storage solution
+	•	Density: Reduce Opex (floor space) with higher density up to 790 TBe per RackU with 15.36 TB SSDs
+	•	Built for multi-cloud - Multiple paths to the cloud: Validated designs with VMWare Cloud, Cloud Tiering Appliance for file tiering and block archive to public /private clouds, CloudIQ storage analytics, Multi-cloud Data Services enabled by Faction for Disaster Recovery-as-a-Service (DRaaS) workload migration, test/dev, and Dell EMC Unity Cloud Edition to run in AWS clouds with VMware Cloud.
+
+Everything needed to store, manage and protect data 
+Unity XT is designed for flash to solve a broad set of modern data center storage challenges for customers requiring simplicity and performance in midsized deployments. The Unity XT Hybrid Series is architected to embrace the agile and modern flash-centric data center that starts in a 2-rack unit architecture designed for high density flash with enterprise rich features. Unity XT is simple to install and provides an easy-to-use and intuitive HTML5 management interface.
+Unity XT’s flexibility supports unified block, file, and virtual volume (VVol) environments, inline data reduction for file and block (all-flash pools on hybrid), integrated copy data management with AppSync , space efficient snapshots and thin clones, unified remote synchronous and asynchronous replication, automatic synchronous failover with MetroSync Manager, expandable dynamic pools, built-in data-at-rest-encryption (enabled at point of sale), file tiering and block snapshot archiving to the cloud, file level retention, built-in data migration features, and deep virtualization integrations with VMware, Microsoft and OpenStack. Depending on your needs, the Unity XT Series is available in your choice of All-Flash or Hybrid, both providing rich all-inclusive software features in a small 2U footprint. 
+	•	Dell EMC Connectrix Family
+The Connectrix family of switches and directors helps users consolidate servers and storage to simplify management, improve application availability, and reduce costs. Connectrix supports traditional Storage Area Networking (SAN) and multiple protocols, including Fibre Channel, FCIP, iSCSI, FCoE, FC-NVMe and FICON for mainframe. Connectrix integrates high-speed connectivity with highly resilient switching technology, which allows users to configure Connectrix directors and switches to meet any application or business requirement.
+The Connectrix family provides you a choice of the industry-leading storage networking product lines. Dell EMC resells and services Brocade products under the Dell EMC Connectrix B-Series brand and Cisco products under the Dell EMC Connectrix MDS Series brand. Dell EMC provides first and second-level support and can engage our partner’s engineering teams when necessary. Management for Connectrix includes Connectrix B-Series SANnav and Connectrix MDS Data Center Network Manager.
+Connectrix delivers the latest SAN technology, including:
+	•	Dell EMC E-Lab provides end-to-end interoperability which can be found in the E-Lab Navigator App
+	•	Dell EMC provides 20+ years of SAN experience
+	•	Live Optics with Dell EMC SAN Health provides SAN Health information
+	•	CloudIQ can monitor your Connectrix SAN from anywhere
+	•	Dell EMC PowerSwitch N3200-ON Series Switches
+High Performance Open Networking 1GbE and 10GbE Multigigabit Switches for Modern Campus Networks.
+The N3200 Switch Series offers power-efficient and resilient 1GbE and 1/2.5/5/10GbE Multigigabit range of switching solution for advanced Layer 3 distribution for offices and campus networks. The series has high-performance capabilities and wire-speed performance utilizing a nonblocking architecture to easily handle unexpected traffic loads. Use dual internal hot-swappable 80PLUS Platinum certified power supplies for high availability and power efficiency. The switches offer simple management and scalability via an 400Gbps (full duplex) high-availability stacking architecture that allows management of up to 12 switches from a single IP address.
+
+Dell EMC PowerSwitch N3200-ON Series Switches
+
+
+
+
+
+
+Modernize Campus Network Architectures
+Modernize campus network architectures with a power efficient and resilient 1/2.5/5/10GbE switching solution with dense options of 802.3at (30W) or 802.3bt (60W/90W) PoE solutions to deliver clean power to wide range network devices such as wireless access points (APs), Voice-over-IP (VoIP) handsets, video conferencing systems, security cameras, LED luminaires and many more.
+Achieve high availability and full bandwidth utilization with Multichassis Link Aggregation (MLAG). N3200 series switches support MLAG to create active/active loop free redundancy without spanning tree. Server rooms can deliver reliable server and storage connectivity with features to help save time and avoid configuration errors. N3200 supports VRF-lite, allowing it to be partitioned into multiple virtual routers with isolated control and data planes on the same physical switch. For greater interoperability in multivendor networks, N3200 switches offer the latest open-standard protocols.
+Technical Specifications
+
+
+
+
+Click here to Open the Dell EMC PowerSwitch N3200-ON Series Switches PDF
+	•	Dell EMC PowerSwitch S5200-ON Series
+High-Performance, Open Networking 25GbE Top-of-Rack and 100GbE Spine / Leaf Switches.
+
+Dell EMC PowerSwitch S5200-ON Series
+The PowerSwitch S5200-ON 25/100GbE fixed switches comprise Dell Technologies’ latest disaggregated hardware and software data center networking solutions, providing state-of-the-art, high-density 25/100GbE ports and a broad range of functionality to meet the growing demands of today’s data center environment. These innovative, next-generation open networking switches offer optimum flexibility and cost-effectiveness for web 2.0, enterprise and cloud service providers with demanding compute and storage traffic environments.
+The S5200-ON is a complete family of switches:12-port, 24-port, and 48-port 25GbE/100GbE ToR switches, 96-port 25GbE/100GbE Middle of Row (MoR)/End of Row (EoR) switch, and a 32-port 100GbE Multi-Rate Spine/Leaf switch. From the compact half-rack width S5212FON providing an ideal form factor for hyper-converged deployments, to the high density S5296F-ON for Middle of Row deployments, the S5200-ON series offers performance and flexibility for a variety of network designs.
+In addition to 100GbE Spine/Leaf deployments, the S5232F-ON can also be used in high density deployments using breakout cables to achieve up to 128 10GbE or 128 25GbE ports.
+Using industry-leading hardware and a choice of Dell EMC SmartFabric OS10 or select 3rd party network operating systems and tools, the S5200-ON switches incorporate multiple architectural features that optimize data center network flexibility, efficiency and availability, including IO panel to PSU or PSU to IO panel airflow for hot/cold aisle environments, redundant, hot-swappable power supplies and fans and deliver non-blocking performance for workloads sensitive to packet loss.
+Priority-based flow control (PFC), data center bridge exchange (DCBX) and enhanced transmission selection (ETS) make the S5200-ON family ideally suited for DCB environments.
+Dell EMC PowerSwitch S5200-ON switches support the open source Open Network Install Environment (ONIE) for zero touch installation of Dell EMC SmartFabric OS10 networking operating system, as well as alternative network operating systems.
+Key Features
+	•	1 or 2RU high-density ToR switches with up to 48 or 96 ports of 25GbE or 32 ports of 100GbE
+	•	Multi-rate 100GbE ports support 10/25/40/50/100GbE
+	•	Scalable L2 and L3 Ethernet switching with QoS and a full complement of standards-based IPv4 and IPv6 features, including OSPF and BGP routing support
+	•	Line-rate performance via non-blocking switch fabrics: 3.2Tbps (6.4Tbps full-duplex) on S5296F-ON and S5232F-ON, 2.0Tbps (4.0Tbps full-duplex) on S5248FON, and 1.08Tbps (2.16Tbps full-duplex) on S5224FON and S5212F-ON
+	•	L2 multipath support via Virtual Link Trunking (VLT) and Routed VLT support
+	•	VXLAN gateway functionality support for bridging and routing the non-virtualized and the virtualized overlay networks with line rate performance
+	•	Support for Dell EMC SmartFabric OS10
+	•	Converged network support for DCB, with priority flow control (802.1Qbb), ETS (802.1Qaz), DCBx and iSCSI TLV support
+	•	Routable RoCE to enable convergence of compute and storage on Leaf/Spine Fabric
+	•	IO panel to PSU airflow or PSU to IO panel airflow Redundant, hot-swappable power supplies and fans on most models
+	•	Supports the open source Open Network Install Environment (ONIE) for zero touch installation of alternate network operating systems
+	•	Tool-less enterprise ReadyRails™ mounting kits for most models reducing time and resources for switch rack installation (S5212F-ON will utilize a tandem tray for mounting)
+	•	Power-efficient operation and Dell Fresh Air 2.0 compliant up to 45ºC helps reduce cooling costs in temperature constrained deployments
+
+
+Key Features with Dell EMC SmartFabric OS10
+
+	•	Consistent DevOps framework across compute, storage and networking elements
+	•	Standard networking features, interfaces and scripting functions for legacy network operations integration
+	•	Standards-based switching hardware abstraction via Switch Abstraction Interface (SAI)
+	•	Pervasive, unrestricted developer environment via Control Plane Services (CPS)
+	•	Dell EMC SmartFabric OS10 software enables Dell EMC layer 2 and 3 switching and routing protocols with integrated IP services, quality of service, manageability and automation features OS10 supports Precision Time Protocol (PTP, IEEE 1588v2) to synchronize clocks on network devices Increase VM Mobility region by stretching L2 VLAN within or across two DCs with unique VLT capabilities
+	•	Scalable L2 and L3 Ethernet Switching with QoS, ACL and a full complement of standards based IPv4 and IPv6 features including OSPF, BGP and PBR
+	•	Enhanced mirroring capabilities including local mirroring, Remote Port Mirroring (RPM), and Encapsulated Remote Port Mirroring (ERPM)
+	•	Converged network support for Data Center Bridging, with priority flow control (802.1Qbb), ETS (802.1Qaz), DCBx and iSCSI TLV
+	•	BGP EVPN with Integrated Routing and Bridging (IRB) in both Asymmetric and Symmetric modes, enabling controller less NVO
+Technical Specifications
+
+
+
+
+
+
+	•	Bill of Quantities
+	•	PowerEdge R660 Server [Hyper-V Cluster Servers]  
+S.NO
+Dell EMC R660 servers
+14 QTY
+1
+2.5" Chassis with up to 10 Hard Drives (SAS/SATA), 2CPU, PERC11
+1
+2
+Intel Xeon Gold 6548Y+ 2.5G, 32C/64T, 20GT/s, 60M Cache, Turbo, HT (250W) DDR5-5200
+2
+3
+32GB RDIMM, 5600MT/s, Dual Rank
+4
+4
+PERC H355 Controller Front
+1
+5
+480GB SSD SATA Read Intensive 6Gbps 512 2.5in Hot-plug AG Drive, 1 DWPD
+2
+6
+iDRAC9, Enterprise 16G
+1
+7
+Broadcom 57414 Dual Port 10/25GbE SFP28, OCP NIC 3.0
+1
+8
+Broadcom 5720 Dual Port 1GbE LOM
+1
+9
+Emulex LPe35002 Dual Port FC32 Fibre Channel HBA, PCIe Low Profile
+1
+10
+Dual, Hot-plug, Power Supply Redundant (1+1), 800W, Mixed Mode, NAF
+1
+11
+Rack Power Cord 2M (C13/C14 10A)
+2
+12
+ProSupport and Next Business Day Onsite Service 36 Month(s)
+1
+
+
+	•	 PowerEdge R760 Servers [VMware Cluster Servers]
+S.NO
+Dell EMC R760 servers
+2 QTY
+1
+2.5" Chassis with 8 Universal Drive Slots (SAS/SATA/NVME), Front PERC 11, 2 CPU
+1
+2
+Intel Xeon Platinum 8568Y+ 2.3G, 48C/96T, 20GT/s, 300M Cache, Turbo, HT (350W) DDR5-5600
+2
+3
+32GB RDIMM, 5600MT/s, Dual Rank
+8
+4
+PERC H755 SAS Front
+1
+5
+480GB SSD SATA Read Intensive 6Gbps 512 2.5in Hot-plug AG Drive, 1 DWPD
+2
+6
+iDRAC9, Enterprise 16G
+1
+7
+Broadcom 57414 Dual Port 10/25GbE SFP28, OCP NIC 3.0
+1
+8
+Broadcom 5720 Dual Port 1GbE LOM
+1
+9
+Emulex LPe35002 Dual Port FC32 Fibre Channel HBA, PCIe Low Profile
+1
+10
+Dual, Hot-plug, Power Supply Redundant (1+1), 800W, Mixed Mode, NAF
+1
+11
+Rack Power Cord 2M (C13/C14 10A)
+2
+12
+ProSupport and Next Business Day Onsite Service 36 Month(s)
+1
+
+
+	•	Dell EMC Switch Unity 380F 
+Usable Capacity of the storage 38.26 TB
+S.NO
+Dell EMC Switch Unity 380F
+1 QTY
+1
+Unity XT 380F DPE 25x2.5" Dell Field Rack
+1
+2
+Unity F 3.84TB ALL FLASH 25X2.5 SSD
+14
+3
+Unity CNA 4x16Gb FC SFPs AF
+1
+ 
+Software and Services
+ 
+4
+ProSupport and Next Business Day Onsite Service Initial, 36 Month(s)
+1
+
+
+	•	Connectrix DS-6610B SAN Switches
+S.NO
+Dell EMC Switch S4128F-ON
+2 QTY
+1
+Connectrix DS-6610B-L 8/24P switch, rear-to-front airflow, 1 PSU (incl 8x16Gb SFPs+rack mount kit)
+1
+2
+Connectrix DS-6610B 8 Port 16G SFP Port on Demand Upgrade Kit
+2
+3
+OM4 LC/LC Multi Mode Fiber Cable (optics required), 5 Meter
+20
+ 
+Software and Services
+ 
+4
+ProSupport and Next Business Day Onsite Service Initial, 36 Month(s)
+1
+
+
+
+
+
+
+
+	•	Dell EMC_ S5224F ToR Switches
+
+S.NO
+Dell EMC Switch S5224F -ON
+2 QTY
+1
+Dell EMC S5224F-ON Switch, 24x 25GbE SFP28, 4x 100GbE QSFP28 ports, IO to PSU air, 2x PSU
+1
+2
+Dell Networking, Transceiver, SFP+, 10GbE, SR, 850nm Wavelength, 300m Reach
+2
+3
+Dell Networking, Cable, SFP28 to SFP28, 25GbE,Passive Copper Twinax Direct Attach Cable,5 Meter
+16
+4
+Dell Networking Cable, 100GbE QSFP28 to QSFP28, Passive Copper Direct Attach Cable, 0.5 Meter
+1
+5
+Jumper Cord - C13/C14, 2M, 250V, 10A (EU, TW, APCC countries except ANZ)
+2
+ 
+Software and Services
+ 
+6
+3Yr ProSupport and Next Business Day On-Site Service
+1
+
+
+	•	Dell EMC_N3248_Managment Switch
+
+S.NO
+Dell EMC Switch N3248TE-ON
+ 1 QTY
+1
+N3248TE-ON, 48x1G, 4x10G SFP+, 2x100G QSFP28, 32GB, 1xAC PSU, PS/IO, OS10 [3. EMEA_N3200_ON_OS10 -
+1
+2
+Dell Networking, Transceiver, SFP+, 10GbE, SR, 850nm Wavelength, 300m Reach
+2
+3
+Dell Networking Cable, OM4 LC/LC Fiber Cable, (Optics required), 10 Meter
+2
+ 
+Software and Services
+ 
+4
+3Yr ProSupport Plus and 4hr Mission Critical
+1
+5
+OS10 Enterprise S4128F-ON
+1
+
+
+
+
+
+
+
+	•	Professional services
+
+
+
+
+

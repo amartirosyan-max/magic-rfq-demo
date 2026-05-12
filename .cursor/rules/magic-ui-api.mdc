@@ -1,0 +1,13 @@
+---
+description: Magic UI — API modules, types, and backend integration
+globs: app/api/**/*.ts
+alwaysApply: false
+---
+
+# API layer (`app/api/`)
+
+- Single Axios instance: `~/api/axios` (`baseURL` = `import.meta.env.VITE_BE_URL`). Request interceptor skips auth only for `/signin`. Response: 401 clears token and redirects to `/login`.
+- One module per domain (`projects.ts`, `systems.ts`, `billing.ts`, …). Export typed functions; colocate `useXxxPolling` / `useXxx` hooks here when they wrap that API.
+- Throw early if ids are missing (`!projectId || projectId === "undefined"` pattern from `projects.ts`).
+- Blob downloads: `responseType: "blob"`, `saveAs` from `file-saver`, parse `Content-Disposition` when present.
+- New endpoints: add types in `app/types/` when shared; extend `EQueryKey` if you add queries.

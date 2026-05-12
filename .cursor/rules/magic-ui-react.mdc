@@ -1,0 +1,14 @@
+---
+description: Magic UI — React routes, layouts, components, TanStack Query
+globs: app/**/*.tsx
+alwaysApply: false
+---
+
+# React / TSX conventions
+
+- **Pages** in `app/routes/`: default export. **Layouts** in `app/layouts/`: default export.
+- **Server data**: `useQuery` / `useMutation` from `@tanstack/react-query`. Gate with `enabled: !!id && ...`.
+- **Polling**: `refetchInterval: (q) => ... ? 1000 : false`; set `refetchOnWindowFocus: false` for chatty polls (match `PollingContext` / `useProjectPolling`).
+- **Project shell**: `layouts/project.tsx` exposes `useOutletContext<ProjectLayoutContext>()` — `openRightOptions`, `openRightChat`.
+- **Contexts** (sparingly): `AuthContext`, `ProjectContext`, `PollingContext`, `SubsystemGenerationContext`, `DiagramContext` — do not duplicate server state in context; use Query cache.
+- **Forms**: react-hook-form + zod + `@hookform/resolvers/zod`; shadcn `Form` primitives. See `app/features/add-user/` for a full pattern.

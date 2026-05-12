@@ -1,0 +1,24 @@
+---
+description: Magic UI — project context, docs index, and non-negotiables
+alwaysApply: true
+---
+
+# Magic UI (magic-ui-dev)
+
+React 19 + React Router 7 (SPA, `ssr: false`) + Vite 6 + TanStack Query v5 + Tailwind v4 + shadcn/ui (Radix). App code lives under `app/`, path alias `~/` → `app/`.
+
+## Authoritative docs (read before large changes)
+
+Start from `app/docs/README.md`, then open the numbered topic files (`01-` … `14-`) under `app/docs/` as needed. Code templates live in `app/docs/examples/` (templates only; not imported by the app).
+
+## Hard rules
+
+- HTTP: only `import api from "~/api/axios"` — never `axios.create`.
+- Query keys: only `EQueryKey` from `~/constants/queryKeys` — no string literals.
+- Mutations: invalidate every dependent cache (`PROJECT_TREE`, `PROJECT_SUBSYSTEM`, `PROJECT_PRICE_DATA`, `PROJECT_DATA`, `SUBSYSTEM_BILLING` when relevant).
+- Routes: declared in `app/routes.ts`; page components default-export from `app/routes/*.tsx`.
+- Subsystem URL depth: use `useEffectiveSubsystemId()` for the current subsystem id — do not re-parse splat paths ad hoc.
+
+## Style
+
+Match existing files: `cn()` from `~/lib/utils`, shadcn primitives from `~/components/ui`, project composites under `~/components/customComponents`. Prefer focused diffs; do not refactor unrelated code.
