@@ -25,7 +25,7 @@
 | `eac5475` | — | `chore: baseline magic-ui-dev as received` |
 | `28a315d` | Step 0 + 1 | `feat(hardware): docs, types, fake-data tree, Verstka assets` |
 | `c21a71e` | Step 2 | `feat(hardware): route / → /avaya, add demo entry route` |
-| _(pending)_ | Step 3 | `feat(hardware): Screen A — 3-part shell + multi-rack canvas` |
+| `548c708` | Step 3 | `feat(hardware): Screen A — 3-part shell + multi-rack canvas` |
 
 ## Step status
 
