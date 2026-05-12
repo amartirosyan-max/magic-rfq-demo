@@ -111,6 +111,9 @@ Verification:
 - `ReadLints` clean on the changed files.
 - Vite HMR picked up every change, no compile/runtime errors.
 
+Commit:
+- `9761ab9` — `fix(hardware): reuse existing sidebars + fix Screen A chrome`.
+
 
 ### Step 4 — Screen B (single rack detail)
 **Status:** not started.
