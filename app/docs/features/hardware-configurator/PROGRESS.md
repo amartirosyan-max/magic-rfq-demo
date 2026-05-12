@@ -14,9 +14,9 @@
 | | |
 | --- | --- |
 | Branch | `main` |
-| Steps done | 3 / 8 |
-| Currently in | **— (Step 2 complete)** |
-| Next | Step 3 — Screen A (multi-rack overview) |
+| Steps done | 4 / 8 |
+| Currently in | **— (Step 3 complete)** |
+| Next | Step 4 — Screen B (single rack detail) |
 
 ## Commit map
 
@@ -25,6 +25,7 @@
 | `eac5475` | — | `chore: baseline magic-ui-dev as received` |
 | `28a315d` | Step 0 + 1 | `feat(hardware): docs, types, fake-data tree, Verstka assets` |
 | `c21a71e` | Step 2 | `feat(hardware): route / → /avaya, add demo entry route` |
+| _(pending)_ | Step 3 | `feat(hardware): Screen A — 3-part shell + multi-rack canvas` |
 
 ## Step status
 
@@ -62,14 +63,31 @@ Verification:
 - `/login` still loads the login page; nothing pre-existing is broken.
 
 ### Step 3 — Screen A (multi-rack overview)
-**Status:** not started.
+**Status:** done.
 
-Plan:
-- New `app/features/hardware/components/HardwareCanvas.tsx` — the central canvas wrapper.
-- Render 4 racks in a row using `Server_BG.png` as the frame and `Server_Dell_0X.png` for the units.
-- Top chrome: server-carousel arrows + `+` placeholder. No brand pill.
-- Subtle blueprint-grid background via CSS.
-- framer-motion scale/opacity on rack hover.
+What:
+- `app/features/hardware/HardwareLayout.tsx` — 3-column shell `[260px | 1fr | 360px]`.
+- `app/features/hardware/SidebarLeft.tsx` — Magic logo, project header, lead score, Grand Total, Preview Proposal button, subsystem nav (project node + 6 children).
+- `app/features/hardware/SidebarRight.tsx` — `Magic AI Advisor / Team / Catalog` tabs (Catalog active); body lists `subsystemCategories` from `fake-data`.
+- `app/features/hardware/CatalogEntryCard.tsx` + `StatusBadge.tsx` — one catalog entry with status pill, 3 action buttons, description.
+- `app/features/hardware/Rack.tsx` — single rack with `Server_BG.png` frame + absolute-positioned `Server_Dell_0X.png` units. U-positioning derived from `positionU` / `sizeU`. Empty racks render with reduced opacity.
+- `app/features/hardware/TopChrome.tsx` — breadcrumb, Design/Questions/Price tabs (Design active), rack carousel control, `+` button. Brand pill omitted.
+- `app/features/hardware/ScreenA.tsx` — blueprint-grid canvas with 4 racks in a row + column labels.
+- `app/routes/avaya/index.tsx` — swap placeholder for `<HardwareLayout><ScreenA /></HardwareLayout>`.
+
+Animations (framer-motion):
+- Rack: `whileHover scale 1.03`, spring transition.
+- Sidebar buttons / nav items / catalog action buttons: subtle scale on hover + tap.
+- Screen mount: fade + scale-in on the canvas.
+
+Tuning points:
+- `Rack.tsx` `TOP_INSET_PCT` / `BOTTOM_INSET_PCT` — adjust to visually fit unit area inside `Server_BG.png` cap/feet.
+- Rack width (140 px) and aspect ratio — adjust if racks look too thin or tall.
+- Image mapping `Server_Dell_01..04.png → R660/R760/Unity 380F/switches` per Q-A1 default.
+
+Verification:
+- `npx tsc --noEmit` clean.
+- HMR picked up the changes; visit `http://localhost:5173/` → redirects to `/avaya` and shows the 3-part layout with Screen A.
 
 ### Step 4 — Screen B (single rack detail)
 **Status:** not started.
