@@ -8,7 +8,7 @@ const labels: Record<CatalogStatus, string> = {
 };
 
 const tones: Record<CatalogStatus, string> = {
-  "in-proposal": "text-teal-600",
+  "in-proposal": "text-[#3744a6]",
   removed: "text-red-600",
   "not-in-proposal": "text-slate-500",
 };

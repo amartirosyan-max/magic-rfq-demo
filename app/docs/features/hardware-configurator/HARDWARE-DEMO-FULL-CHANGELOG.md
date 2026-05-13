@@ -400,6 +400,74 @@ After the first cut of §14 we found three issues worth fixing in the same pass:
 
 ---
 
+## Catalog-driven editing (2026-05-13, Dr. Artemy review)
+
+Following Dr. Artemy's review the **right-sidebar Catalog became the only
+place to edit a project**. Screen C is now read-only — qty / description /
+chassis swap / delete all live on `CatalogEntryCard` action buttons.
+
+### What changed
+
+- **Two new edit stores** with a strict file split for Vite Fast Refresh
+  compatibility:
+  - `ComponentEditsContext.ts` (hook + context, non-component exports) +
+    `ComponentEditsProvider.tsx` (component-only) — overlays qty,
+    description and deletion on top of `Subsystem.components`.
+  - `SubsystemEditsContext.ts` (hook + context) +
+    `SubsystemEditsProvider.tsx` (component-only) — overlays name, qty,
+    deletion **and chassis swap** on top of each `Subsystem`. Splitting
+    the files was required: mixed component + non-component exports
+    force `hmr invalidate` on every save and surfaced transient
+    "useComponentEdits must be used inside <ComponentEditsProvider>"
+    errors during HMR.
+- **`CatalogEntryCard`** lost its decorative `+ □ ×` trio (it did
+  nothing). The card now renders **exactly one** primary action button
+  when `actionLabel + onAction` are passed; otherwise the whole card
+  is the click target (used by L0 active-subsystem cards).
+- **L0 ProjectCatalog**: deleted subsystems pinned to the top with a
+  `Restore` button so the user can always recover.
+- **L1 SubsystemCatalog**: pinned `SubsystemEditCard` (rename / qty /
+  delete) + every non-active alternative gets a `Swap to this` action
+  that calls `swapChassis(subsystemId, {…})`. When a swap is active,
+  the swapped SKU floats to the top with a `Reset to original` action.
+- **L3 ComponentCategoryView**: installed SKU shown with a qty stepper
+  + `Delete` / `Restore`; alternatives get a single `Swap` button.
+- **`Rack.tsx`** filters out units belonging to deleted subsystems so
+  the canvas updates immediately on delete / restore.
+- **`HardwareLayoutInner`** clears stale `selectedSubsystemId` /
+  `selectedUnitId` when the subsystem is deleted, so Screen C
+  unmounts cleanly.
+
+### Files
+
+| File | Action |
+|------|--------|
+| `app/features/hardware/ComponentEditsContext.tsx` | **Deleted** (split below). |
+| `app/features/hardware/ComponentEditsContext.ts` | **New** — context object + `useComponentEdits` hook. |
+| `app/features/hardware/ComponentEditsProvider.tsx` | **New** — `ComponentEditsProvider` only. |
+| `app/features/hardware/SubsystemEditsContext.tsx` | **Deleted** (split below). |
+| `app/features/hardware/SubsystemEditsContext.ts` | **New** — context object + `useSubsystemEdits` hook + `ChassisSwap` type. |
+| `app/features/hardware/SubsystemEditsProvider.tsx` | **New** — `SubsystemEditsProvider` only. |
+| `app/features/hardware/HardwareLayout.tsx` | Wraps both providers + stale-selection guards. |
+| `app/features/hardware/CatalogPanel.tsx` | L0 deleted-pin / `SubsystemEditCard` / Swap / Reset / installed-row editor. |
+| `app/features/hardware/CatalogEntryCard.tsx` | Removed decorative trio; single `PrimaryActionButton` when wired. |
+| `app/features/hardware/Rack.tsx` | Filters deleted subsystems out of the visual rack. |
+| `app/features/hardware/ScreenC.tsx` | Read-only — qty pill restored to the original `text-[20px]` size. |
+| `app/features/hardware/useActiveSubsystem.ts` | Applies subsystem overlays + returns `null` for deleted subsystems. |
+| `app/features/hardware/adapter.ts` | Accepts edited subsystems so the left nav reflects renames / deletes. |
+
+### Verification
+
+- `npx tsc --noEmit` — pass.
+- `curl http://localhost:5173/avaya` — `HTTP 200`, ~282 KB body.
+- Vite dev log — no `Could not Fast Refresh`, no `hmr invalidate`, no
+  transform errors after the split.
+- Manual click-through: open L1 → click `Swap to this` on R760 →
+  Screen C chassis hero name updates to R760 → `Reset to original`
+  restores R660.
+
+---
+
 ## Regenerating this summary from Git
 
 ```bash

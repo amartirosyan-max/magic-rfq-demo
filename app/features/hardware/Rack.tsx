@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { hardwareProject } from "./fake-data";
 import { useSelection } from "./SelectionContext";
+import { useSubsystemEdits } from "./SubsystemEditsContext";
 import type { Rack as RackType, RackUnit } from "./types";
 import rackFrameUrl from "~/assets/hardware/verstka/Server_BG.png";
 import serverImg01 from "~/assets/hardware/verstka/Server_Dell_01.png";
@@ -94,6 +95,16 @@ export function Rack({ rack, columnLabel }: RackProps) {
     selectUnit,
     selectSubsystem,
   } = useSelection();
+  const { isDeleted: isSubsystemDeleted } = useSubsystemEdits();
+
+  /* Units whose parent subsystem was removed from the project disappear
+   * from the canvas — this keeps the racks visually consistent with the
+   * left-sidebar nav and the catalog. Restored subsystems re-populate
+   * automatically because `useSubsystemEdits` is reactive. */
+  const visibleUnits = useMemo<RackUnit[]>(
+    () => rack.units.filter((u) => !isSubsystemDeleted(u.subsystemId)),
+    [rack.units, isSubsystemDeleted],
+  );
 
   const hasSelection = selectedRackId !== null;
   const isSelected = selectedRackId === rack.id;
@@ -152,24 +163,6 @@ export function Rack({ rack, columnLabel }: RackProps) {
     selectSubsystem(nextUnit ? subsystemId : null);
   };
 
-  /* Group consecutive units by subsystem so different component types
-   * get visible spacing between them, and the bottom-most group floats
-   * down to the rack feet (`mt-auto`) — matching how real racks tend
-   * to anchor heavy gear (storage / large servers) at the bottom. */
-  const unitGroups = useMemo(() => {
-    const sorted = [...rack.units].sort((a, b) => b.positionU - a.positionU);
-    const groups: { subsystemId: string; units: RackUnit[] }[] = [];
-    for (const unit of sorted) {
-      const last = groups[groups.length - 1];
-      if (last && last.subsystemId === unit.subsystemId) {
-        last.units.push(unit);
-      } else {
-        groups.push({ subsystemId: unit.subsystemId, units: [unit] });
-      }
-    }
-    return groups;
-  }, [rack.units]);
-
   return (
     <motion.div
       layout
@@ -212,16 +205,13 @@ export function Rack({ rack, columnLabel }: RackProps) {
       />
 
       {/* Interior slot region — sized to the actual usable inside of the
-          rack frame. Units stack top-down with `flex flex-col` and each
-          <img> is `w-full` with NO explicit height so the browser derives
-          the height from the image's intrinsic aspect ratio (heights scale
-          adaptively with rack width).
-          Units are grouped by subsystem so a small gap appears between
-          different component types, and the last group (typically storage
-          or large 2U servers) is pushed down with `mt-auto` to sit at the
-          rack's bottom. */}
+          rack frame. Each unit is positioned ABSOLUTELY by its `positionU`
+          inside this box, so `positionU` in `fake-data.ts` is the single
+          source of truth for vertical placement. The interior holds
+          `rack.heightU` slots (42 for v1); 1 U = (100 / heightU)%.
+          U-numbering convention: U1 = bottom-most slot, U42 = top-most. */}
       <div
-        className="absolute flex flex-col"
+        className="absolute"
         style={{
           top: `${TOP_INSET_PCT}%`,
           bottom: `${BOTTOM_INSET_PCT}%`,
@@ -229,78 +219,66 @@ export function Rack({ rack, columnLabel }: RackProps) {
           right: `${RIGHT_SIDE_INSET_PCT}%`,
         }}
       >
-        {unitGroups.map((group, gi) => {
-          const isLastGroup =
-            gi === unitGroups.length - 1 && unitGroups.length > 1;
+        {visibleUnits.map((unit) => {
+          const subsystem = project.subsystems.find(
+            (s) => s.id === unit.subsystemId,
+          );
+          if (!subsystem) return null;
+
+          const image = SERVER_IMAGES[subsystem.chassis.image];
+
+          /* Convert (positionU, sizeU) → CSS top/height percentages of the
+           * interior box. A `sizeU`-tall unit anchored at the bottom edge
+           * of U=`positionU` occupies U=positionU .. U=positionU+sizeU-1. */
+          const topU = unit.positionU + unit.sizeU - 1;
+          const topPct = ((rack.heightU - topU) / rack.heightU) * 100;
+          const heightPct = (unit.sizeU / rack.heightU) * 100;
+
+          /* Hover visuals (ring + scale) are only enabled when the parent
+           * rack is selected — otherwise the racks are too small in
+           * carousel view for per-unit hover feedback to read well. Click
+           * still updates `selectedUnitId` in the context (drives Screen
+           * C / detail). The wrapper is `group` so the inner ring plate
+           * listens to `group-hover:` and fades in. */
           return (
-            <div
-              key={`${group.subsystemId}-${gi}`}
+            <motion.div
+              key={unit.id}
+              onClick={(e) => handleUnitClick(e, unit.id, unit.subsystemId)}
+              whileHover={
+                isSelected ? { scale: UNIT_HOVER_SCALE } : undefined
+              }
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              style={{
+                top: `${topPct}%`,
+                height: `${heightPct}%`,
+              }}
               className={cn(
-                "flex flex-col",
-                gi > 0 && !isLastGroup && "mt-[2%]",
-                isLastGroup && "mt-auto",
+                "group absolute left-0 right-0 origin-center",
+                isSelected && "cursor-pointer hover:z-10",
               )}
             >
-              {group.units.map((unit) => {
-                const subsystem = project.subsystems.find(
-                  (s) => s.id === unit.subsystemId,
-                );
-                if (!subsystem) return null;
+              {/* Hover "ring" — coloured plate behind the image. Edit the
+                  UNIT_HOVER_RING_* constants near the top of this file. */}
+              {isSelected ? (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "pointer-events-none absolute opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100",
+                    UNIT_HOVER_RING_INSET_X,
+                    UNIT_HOVER_RING_INSET_Y,
+                    UNIT_HOVER_RING_RADIUS,
+                    UNIT_HOVER_RING_COLOR,
+                  )}
+                />
+              ) : null}
 
-                const image = SERVER_IMAGES[subsystem.chassis.image];
-
-                /* Hover visuals (ring + scale) are only enabled when the
-                 * parent rack is selected — otherwise the racks are too
-                 * small in carousel view for per-unit hover feedback to
-                 * read well. Click still updates `selectedUnitId` in the
-                 * context (will drive Screen C / detail later).
-                 *
-                 * The wrapper is `group` so the inner ring plate listens
-                 * to `group-hover:` and fades in. Both ring + image scale
-                 * together via framer-motion's `whileHover`. */
-                return (
-                  <motion.div
-                    key={unit.id}
-                    onClick={(e) => handleUnitClick(e, unit.id, unit.subsystemId)}
-                    whileHover={
-                      isSelected ? { scale: UNIT_HOVER_SCALE } : undefined
-                    }
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 22,
-                    }}
-                    className={cn(
-                      "group relative block w-full origin-center",
-                      isSelected && "cursor-pointer hover:z-10",
-                    )}
-                  >
-                    {/* Hover "ring" — coloured plate behind the image.
-                        Edit the four UNIT_HOVER_RING_* constants near the
-                        top of this file to change its look. */}
-                    {isSelected ? (
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "pointer-events-none absolute opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100",
-                          UNIT_HOVER_RING_INSET_X,
-                          UNIT_HOVER_RING_INSET_Y,
-                          UNIT_HOVER_RING_RADIUS,
-                          UNIT_HOVER_RING_COLOR,
-                        )}
-                      />
-                    ) : null}
-
-                    <img
-                      src={image}
-                      alt={subsystem.chassis.name}
-                      draggable={false}
-                      className="relative block w-full"
-                    />
-                  </motion.div>
-                );
-              })}
-            </div>
+              <img
+                src={image}
+                alt={subsystem.chassis.name}
+                draggable={false}
+                className="relative block h-full w-full object-fill"
+              />
+            </motion.div>
           );
         })}
       </div>

@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { Plus, Square, X } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { StatusBadge } from "./StatusBadge";
-import type { CatalogEntry, CatalogStatus } from "./types";
+import type { CatalogEntry } from "./types";
 
 /**
  * One card in the right-sidebar Catalog list.
@@ -14,26 +14,24 @@ import type { CatalogEntry, CatalogStatus } from "./types";
  *
  * The card shape is intentionally the same at every level so the visual
  * language stays consistent. Optional fields on `CatalogEntry`
- * (`price`, `bestFor`, `spec`) light up extra rows when populated:
+ * (`price`, `bestFor`, `spec`) light up extra rows when populated.
  *
- *   ┌────────────────────────────────────────────┬────────────┐
- *   │  Name                                       │   ~$4,500  │   ← title row
- *   │  ● In proposal                              │            │
- *   │  Best for: Dense compute nodes              │            │
- *   │                                             │            │
- *   │  [ + ] [ □ ] [ × ]                          │            │   ← actions
- *   │                                             │            │
- *   │  32C / 64T · 300W · 60MB L3                 │            │   ← spec
- *   │  Long product description that wraps …      │            │   ← description
- *   └─────────────────────────────────────────────┴────────────┘
- *
- * Action buttons are visual-only for the demo.
+ * Action area:
+ *   - When `actionLabel + onAction` are passed, a single primary action
+ *     button is rendered (Swap / Add / Restore). This is the *only* way
+ *     to get a clickable button on a card — the previous decorative
+ *     `+ □ ×` trio was visual noise that did nothing, so it's gone (per
+ *     Dr. Artemy's 2026-05-13 feedback: "this buttons on catalog didn't
+ *     do anything"). Callers that want a clickable-card-only behaviour
+ *     should pass `onClick` and skip the action props.
  */
 export function CatalogEntryCard({
   entry,
   selected,
   onClick,
   className,
+  actionLabel,
+  onAction,
 }: {
   entry: CatalogEntry;
   /** Visual override: forces the "currently in proposal" ring even when
@@ -42,6 +40,13 @@ export function CatalogEntryCard({
   selected?: boolean;
   onClick?: () => void;
   className?: string;
+  /** When set, the decorative `+ □ ×` trio is replaced by a single
+   *  primary action button (e.g. "Swap", "Add"). The button fires
+   *  `onAction` and stops propagation so the surrounding `onClick`
+   *  selector behaviour stays intact. Used by the component-category
+   *  view in the right sidebar to drive real edits. */
+  actionLabel?: string;
+  onAction?: () => void;
 }) {
   const inProposal = selected ?? entry.status === "in-proposal";
 
@@ -52,7 +57,7 @@ export function CatalogEntryCard({
       className={cn(
         "relative px-4 py-4 transition-colors",
         inProposal &&
-          "rounded-xl border border-teal-300/80 bg-teal-50/30 ring-1 ring-teal-200/60",
+          "rounded-xl border border-[#3744a6]/60 bg-[#3744a6]/[0.05] ring-1 ring-[#3744a6]/30",
         onClick && "cursor-pointer",
         className,
       )}
@@ -77,11 +82,17 @@ export function CatalogEntryCard({
         ) : null}
       </header>
 
-      <div className="mt-3 flex gap-2">
-        <ActionButton kind="add" status={entry.status} />
-        <ActionButton kind="edit" status={entry.status} />
-        <ActionButton kind="remove" status={entry.status} />
-      </div>
+      {actionLabel && onAction ? (
+        <div className="mt-3">
+          <PrimaryActionButton
+            label={actionLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction();
+            }}
+          />
+        </div>
+      ) : null}
 
       {entry.spec ? (
         <p className="mt-3 text-[12.5px] leading-snug text-slate-500">
@@ -101,40 +112,27 @@ export function CatalogEntryCard({
   );
 }
 
-type ActionKind = "add" | "edit" | "remove";
-
-function ActionButton({
-  kind,
-  status,
+function PrimaryActionButton({
+  label,
+  onClick,
 }: {
-  kind: ActionKind;
-  status: CatalogStatus;
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
 }) {
-  /* The "Remove" action is rendered filled-red when this entry is already
-   * in the "removed" state; otherwise it's a subtle outlined red. */
-  const removeActive = kind === "remove" && status === "removed";
-
-  const colour =
-    kind === "remove"
-      ? removeActive
-        ? "bg-red-500 text-white border-red-500"
-        : "bg-red-50 text-red-500 border-red-200"
-      : "bg-sky-50 text-sky-600 border-sky-200";
-
-  const Icon = kind === "add" ? Plus : kind === "edit" ? Square : X;
-
   return (
     <motion.button
       type="button"
-      whileHover={{ scale: 1.06 }}
-      whileTap={{ scale: 0.94 }}
+      onClick={onClick}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.97 }}
       className={cn(
-        "flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
-        colour,
+        "inline-flex items-center gap-1.5 rounded-full border border-[#3744a6]/60 bg-[#3744a6]/[0.06] px-3 py-1.5 text-[12px] font-semibold text-[#3744a6] transition-colors",
+        "hover:border-[#3744a6] hover:bg-[#3744a6]/10",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3744a6]/50",
       )}
-      aria-label={kind}
     >
-      <Icon className="h-4 w-4" strokeWidth={2.2} />
+      <ArrowLeftRight className="h-3.5 w-3.5" />
+      {label}
     </motion.button>
   );
 }
