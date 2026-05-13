@@ -12,7 +12,7 @@ import avatarImage9 from "~/assets/avatars/avatar_tune_speech_recognition.png";
 import avatarImage10 from "~/assets/avatars/avatar_voice_cloning.png";
 
 import hardwareImage1 from "~/assets/hardware/dell-poweredge-760xa.png";
-import hardwareImage2 from "~/assets/hardware/Dell-PowerEdge-R660.png";
+import hardwareImage2 from "~/assets/hardware/dell-poweredge-r660.png";
 import hardwareImage3 from "~/assets/hardware/dell-poweredge-xe9680.png";
 import hardwareImage4 from "~/assets/hardware/dell-powerscale-f910.png";
 import hardwareImage5 from "~/assets/hardware/dell_powerswitch_z9432fon.png";
