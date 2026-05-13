@@ -43,18 +43,28 @@ export function HardwareCanvas() {
 
   return (
     <section className="relative flex h-full w-full flex-col overflow-hidden bg-[#3b6bb1]">
-      {/* Tiled grid texture over the blue canvas. The PNG is fairly dark /
-       * opaque, so a modest opacity keeps the original blue field visible
-       * (same feel as before) while still showing the new tile pattern. */}
+      {/* Tiled grid texture over the blue canvas.
+       *
+       * Visual goals:
+       *   - More grid cells per screen than the native 122px tile would
+       *     give — we render it at ~72px so the grid reads denser and
+       *     the cell lines feel a touch thicker.
+       *   - Slightly bolder than before (opacity 0.65 vs 0.50) so the
+       *     blueprint character is more present without overpowering the
+       *     rack contents.
+       *   - The zoom-in on "dive" should be a barely-perceptible nudge,
+       *     not a swoop — keeps the canvas calm. Only the background
+       *     scales; racks live in their own subtree. */}
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-repeat opacity-50"
+        className="pointer-events-none absolute inset-0 bg-repeat opacity-65"
         style={{
           backgroundImage: `url(${gridTileUrl})`,
           backgroundPosition: "0 0",
+          backgroundSize: "72px 72px",
         }}
-        animate={{ scale: isZoomed ? 1.2 : 1 }}
-        transition={{ type: "spring", stiffness: 220, damping: 26 }}
+        animate={{ scale: isZoomed ? 1.8 : 1 }}
+        transition={{ type: "spring", stiffness: 180, damping: 28 }}
       />
 
       <TopChrome />

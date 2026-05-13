@@ -1,9 +1,10 @@
-import { type MouseEvent } from "react";
+import { useMemo, type MouseEvent } from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { hardwareProject } from "./fake-data";
 import { useSelection } from "./SelectionContext";
-import type { Rack as RackType } from "./types";
+import { useSubsystemEdits } from "./SubsystemEditsContext";
+import type { Rack as RackType, RackUnit } from "./types";
 import rackFrameUrl from "~/assets/hardware/verstka/Server_BG.png";
 import serverImg01 from "~/assets/hardware/verstka/Server_Dell_01.png";
 import serverImg02 from "~/assets/hardware/verstka/Server_Dell_02.png";
@@ -94,6 +95,16 @@ export function Rack({ rack, columnLabel }: RackProps) {
     selectUnit,
     selectSubsystem,
   } = useSelection();
+  const { isDeleted: isSubsystemDeleted } = useSubsystemEdits();
+
+  /* Units whose parent subsystem was removed from the project disappear
+   * from the canvas — this keeps the racks visually consistent with the
+   * left-sidebar nav and the catalog. Restored subsystems re-populate
+   * automatically because `useSubsystemEdits` is reactive. */
+  const visibleUnits = useMemo<RackUnit[]>(
+    () => rack.units.filter((u) => !isSubsystemDeleted(u.subsystemId)),
+    [rack.units, isSubsystemDeleted],
+  );
 
   const hasSelection = selectedRackId !== null;
   const isSelected = selectedRackId === rack.id;
@@ -208,7 +219,7 @@ export function Rack({ rack, columnLabel }: RackProps) {
           right: `${RIGHT_SIDE_INSET_PCT}%`,
         }}
       >
-        {rack.units.map((unit) => {
+        {visibleUnits.map((unit) => {
           const subsystem = project.subsystems.find(
             (s) => s.id === unit.subsystemId,
           );

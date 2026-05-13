@@ -253,7 +253,7 @@ function ComponentCard({
       }}
       className={cn(
         "group flex w-full cursor-pointer items-stretch gap-3 rounded-[6px] text-left",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#70CDFF]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
       )}
     >
       {/* Icon sits OUTSIDE the white card, as in the reference UI. */}
@@ -270,7 +270,7 @@ function ComponentCard({
         className={cn(
           "relative flex min-h-[62px] flex-1 items-center rounded-[5px] px-2.5 py-2.5 transition-[box-shadow,transform,background-color,border-color] duration-150",
           selected
-            ? "bg-white ring-2 ring-teal-400 shadow-[0_2px_4px_rgba(15,23,42,0.10),0_10px_24px_rgba(13,148,136,0.25)]"
+            ? "bg-white ring-2 ring-[#70CDFF] shadow-[0_2px_4px_rgba(15,23,42,0.10),0_10px_24px_rgba(112,205,255,0.45)]"
             : "bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06),0_3px_10px_rgba(15,23,42,0.08)] group-hover:shadow-[0_2px_4px_rgba(15,23,42,0.10),0_6px_18px_rgba(15,23,42,0.14)]",
         )}
       >
@@ -382,7 +382,7 @@ function ChassisHero({
       transition={{ type: "spring", stiffness: 220, damping: 28 }}
       className={cn(
         "flex shrink-0 cursor-pointer items-start gap-5 rounded-md text-left",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#70CDFF]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
       )}
     >
       {/* Chassis image — sits DIRECTLY on the blueprint (no card behind
@@ -403,7 +403,7 @@ function ChassisHero({
         className={cn(
           "flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-white/95 px-5 py-4 transition-[box-shadow,border-color] duration-150",
           selected
-            ? "ring-2 ring-teal-400 shadow-[0_2px_6px_rgba(15,23,42,0.10),0_14px_28px_rgba(13,148,136,0.28)]"
+            ? "ring-2 ring-[#70CDFF] shadow-[0_2px_6px_rgba(15,23,42,0.10),0_14px_28px_rgba(112,205,255,0.50)]"
             : "ring-1 ring-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.10)] hover:ring-slate-300",
         )}
       >

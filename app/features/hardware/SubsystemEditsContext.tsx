@@ -1,15 +1,8 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext } from "react";
 import type { Subsystem } from "./types";
 
 /**
- * Subsystem-level edits store.
+ * Subsystem-level edits store — *non-component* exports only.
  *
  * Mirrors `ComponentEditsContext` but for the left-sidebar subsystem rows
  * (Hyper-v cluster / VMware cluster / SAN Storage / …). Per Dr. Artemy's
@@ -17,129 +10,57 @@ import type { Subsystem } from "./types";
  * this context is the single overlay that every consumer reads:
  *
  *   - left sidebar nav (`adapter.ts`)
- *   - Screen C `PageTitle`
+ *   - Screen C `PageTitle` + chassis hero
  *   - Catalog L0 project list cards
  *   - Catalog breadcrumb segments
  *
  * Edits never mutate `hardwareProject`; they sit on top as a session-only
  * overlay so the static fake-data stays the source of truth.
+ *
+ * File split (2026-05-13): see the doc-comment on `ComponentEditsContext.ts`
+ * for the Fast-Refresh rationale. The `<SubsystemEditsProvider>` lives in
+ * `SubsystemEditsProvider.tsx`.
  */
-interface SubsystemEditsContextValue {
-  /** Renames + qty edits applied to a single subsystem. Returns the same
-   *  reference when there's no override (so React memoisation stays sharp). */
+
+/** Light overlay describing a swapped chassis SKU. Only the user-visible
+ * fields are tracked; the underlying `chassis.id` / image / U-size stay
+ * untouched so racks keep their geometry. */
+export interface ChassisSwap {
+  /** Catalog entry id of the alternative SKU the user picked. */
+  catalogEntryId: string;
+  /** New chassis display name to surface in Screen C + breadcrumb. */
+  name: string;
+  /** Short spec / description shown under the chassis hero. */
+  description?: string;
+}
+
+export interface SubsystemEditsContextValue {
+  /** Renames + qty edits + chassis swap applied to a single subsystem.
+   *  Returns the same reference when there's no override (so React
+   *  memoisation stays sharp). */
   applyEdits: (subsystem: Subsystem) => Subsystem;
   /** Convenience iterator: every non-deleted subsystem with overlays applied. */
   effectiveSubsystems: (subsystems: Subsystem[]) => Subsystem[];
-  /** Direct overrides. */
   setName: (subsystemId: string, value: string) => void;
   setQty: (subsystemId: string, value: number) => void;
   deleteSubsystem: (subsystemId: string) => void;
   restoreSubsystem: (subsystemId: string) => void;
   isDeleted: (subsystemId: string) => boolean;
+  /** Swap the chassis SKU of a subsystem to one of the catalog alternatives. */
+  swapChassis: (subsystemId: string, swap: ChassisSwap) => void;
+  /** Clear any chassis swap — falls back to the original `fake-data` chassis. */
+  resetChassis: (subsystemId: string) => void;
+  /** Read the currently active catalog entry id for a subsystem (or null
+   *  if no swap is in effect). Used by the catalog L1 view to highlight
+   *  which alternative card is "in proposal" right now. */
+  getActiveChassisCatalogId: (subsystemId: string) => string | null;
   /** Lookup of currently deleted ids — useful for the "Restore" affordance
    *  in the L0 catalog when listing tombstoned subsystems. */
   deletedIds: string[];
 }
 
-const SubsystemEditsContext =
+export const SubsystemEditsContext =
   createContext<SubsystemEditsContextValue | null>(null);
-
-export function SubsystemEditsProvider({ children }: { children: ReactNode }) {
-  /* Three independent overlays keyed by `Subsystem.id`. Plain objects so
-   * React's referential-equality checks fire as expected on each setState. */
-  const [nameOverrides, setNameOverrides] = useState<Record<string, string>>(
-    {},
-  );
-  const [qtyOverrides, setQtyOverrides] = useState<Record<string, number>>({});
-  const [deletedMap, setDeletedMap] = useState<Record<string, true>>({});
-
-  const isDeleted = useCallback(
-    (id: string) => deletedMap[id] === true,
-    [deletedMap],
-  );
-
-  const applyEdits = useCallback(
-    (subsystem: Subsystem): Subsystem => {
-      const nameOverride = nameOverrides[subsystem.id];
-      const qtyOverride = qtyOverrides[subsystem.id];
-      if (nameOverride === undefined && qtyOverride === undefined) {
-        return subsystem;
-      }
-      return {
-        ...subsystem,
-        name:
-          typeof nameOverride === "string" && nameOverride.length > 0
-            ? nameOverride
-            : subsystem.name,
-        qty: typeof qtyOverride === "number" ? qtyOverride : subsystem.qty,
-      };
-    },
-    [nameOverrides, qtyOverrides],
-  );
-
-  const effectiveSubsystems = useCallback(
-    (subsystems: Subsystem[]): Subsystem[] => {
-      return subsystems
-        .filter((s) => !deletedMap[s.id])
-        .map((s) => applyEdits(s));
-    },
-    [deletedMap, applyEdits],
-  );
-
-  const setName = useCallback((id: string, value: string) => {
-    setNameOverrides((prev) => ({ ...prev, [id]: value }));
-  }, []);
-
-  const setQty = useCallback((id: string, value: number) => {
-    /* Clamp at 1 — going to 0 belongs to "Delete" so the affordance stays
-     * separate from the stepper. */
-    const clamped = Math.max(1, Math.round(value));
-    setQtyOverrides((prev) => ({ ...prev, [id]: clamped }));
-  }, []);
-
-  const deleteSubsystem = useCallback((id: string) => {
-    setDeletedMap((prev) => ({ ...prev, [id]: true }));
-  }, []);
-
-  const restoreSubsystem = useCallback((id: string) => {
-    setDeletedMap((prev) => {
-      if (!prev[id]) return prev;
-      const { [id]: _omit, ...rest } = prev;
-      return rest;
-    });
-  }, []);
-
-  const deletedIds = useMemo(() => Object.keys(deletedMap), [deletedMap]);
-
-  const value = useMemo<SubsystemEditsContextValue>(
-    () => ({
-      applyEdits,
-      effectiveSubsystems,
-      setName,
-      setQty,
-      deleteSubsystem,
-      restoreSubsystem,
-      isDeleted,
-      deletedIds,
-    }),
-    [
-      applyEdits,
-      effectiveSubsystems,
-      setName,
-      setQty,
-      deleteSubsystem,
-      restoreSubsystem,
-      isDeleted,
-      deletedIds,
-    ],
-  );
-
-  return (
-    <SubsystemEditsContext.Provider value={value}>
-      {children}
-    </SubsystemEditsContext.Provider>
-  );
-}
 
 export function useSubsystemEdits(): SubsystemEditsContextValue {
   const ctx = useContext(SubsystemEditsContext);

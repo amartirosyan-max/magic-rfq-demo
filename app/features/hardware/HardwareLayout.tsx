@@ -1,11 +1,11 @@
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { SidebarLeft } from "~/components/sidebar-left";
 import { SidebarRight } from "~/components/sidebar-right";
 import { DiagramProvider } from "~/context/DiagramContext";
 import formatToUSD from "~/utils/formatUSD";
 import { CatalogPanel } from "./CatalogPanel";
-import { ComponentEditsProvider } from "./ComponentEditsContext";
+import { ComponentEditsProvider } from "./ComponentEditsProvider";
 import { HardwareLogo } from "./HardwareLogo";
 import {
   getFakeNavItems,
@@ -14,10 +14,8 @@ import {
 } from "./adapter";
 import { hardwareProject } from "./fake-data";
 import { SelectionProvider, useSelection } from "./SelectionContext";
-import {
-  SubsystemEditsProvider,
-  useSubsystemEdits,
-} from "./SubsystemEditsContext";
+import { SubsystemEditsProvider } from "./SubsystemEditsProvider";
+import { useSubsystemEdits } from "./SubsystemEditsContext";
 
 /**
  * Three-column shell for the hardware configurator demo.
@@ -45,8 +43,13 @@ export function HardwareLayout({ children }: { children: ReactNode }) {
 }
 
 function HardwareLayoutInner({ children }: { children: ReactNode }) {
-  const { selectedSubsystemId, selectSubsystem } = useSelection();
-  const { effectiveSubsystems } = useSubsystemEdits();
+  const {
+    selectedSubsystemId,
+    selectSubsystem,
+    selectedUnitId,
+    selectUnit,
+  } = useSelection();
+  const { effectiveSubsystems, isDeleted } = useSubsystemEdits();
   const project = getFakeProject();
   const projectPriceData = getFakeProjectPrice();
   /* Project the subsystem-edit overlay (renames + deletes) into the nav
@@ -59,6 +62,26 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
     () => getFakeNavItems(selectedSubsystemId, editedSubsystems),
     [selectedSubsystemId, editedSubsystems],
   );
+
+  /* Stale-selection guard: when a subsystem is deleted while it (or one
+   * of its rack units) is selected, drop the selection so we don't keep
+   * dangling state pointing at something the user can no longer see. */
+  useEffect(() => {
+    if (selectedSubsystemId && isDeleted(selectedSubsystemId)) {
+      selectSubsystem(null);
+    }
+  }, [selectedSubsystemId, isDeleted, selectSubsystem]);
+
+  useEffect(() => {
+    if (!selectedUnitId) return;
+    for (const rack of hardwareProject.racks) {
+      const unit = rack.units.find((u) => u.id === selectedUnitId);
+      if (unit && isDeleted(unit.subsystemId)) {
+        selectUnit(null);
+        return;
+      }
+    }
+  }, [selectedUnitId, isDeleted, selectUnit]);
 
   return (
     <DiagramProvider>
