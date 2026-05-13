@@ -39,10 +39,13 @@ import gridTilePng from "~/assets/hardware/PNG+SVG/BG_Blue_Grid_Tile_2.png";
 import logoMarkSvg from "~/assets/hardware/verstka/Logo.svg";
 import logoTextSvg from "~/assets/hardware/verstka/Logo_text.svg";
 import rackFramePng from "~/assets/hardware/verstka/Server_BG.png";
-import serverDell01Png from "~/assets/hardware/verstka/Server_Dell_01.png";
-import serverDell02Png from "~/assets/hardware/verstka/Server_Dell_02.png";
-import serverDell03Png from "~/assets/hardware/verstka/Server_Dell_03.png";
-import serverDell04Png from "~/assets/hardware/verstka/Server_Dell_04.png";
+/* Real product photos — one per chassis SKU in the proposal. */
+import productR660 from "~/assets/hardware/products/Dell-PowerEdge-R660.png";
+import productR760 from "~/assets/hardware/products/Dell-PowerEdge-R760.png";
+import productUnity380F from "~/assets/hardware/products/DELL-UNITY-XT-380F.png";
+import productDS6610B from "~/assets/hardware/products/Dell-Connectrix-DS-6610B.png";
+import productS5224F from "~/assets/hardware/products/Dell-EMC-S5224F-ON.png";
+import productN3248 from "~/assets/hardware/products/Dell-EMC-N3248TE-ON.png";
 
 import componentCpuVerstka from "~/assets/hardware/verstka/Component_CPU.png";
 import componentHddVerstka from "~/assets/hardware/verstka/Component_HDD.png";
@@ -58,7 +61,7 @@ import componentRamPng from "~/assets/hardware/PNG+SVG/Component_RAM.png";
 
 export interface PreloadAsset {
   href: string;
-  type: "image/png" | "image/jpeg" | "image/svg+xml";
+  type: "image/png" | "image/jpeg" | "image/svg+xml" | "image/webp";
   /** "high" jumps the network queue, "auto" lets the browser decide. */
   priority: "high" | "auto";
 }
@@ -71,10 +74,12 @@ const critical: PreloadAsset[] = [
   { href: bgBlueJpg, type: "image/jpeg", priority: "high" },
   { href: gridTilePng, type: "image/png", priority: "high" },
   { href: rackFramePng, type: "image/png", priority: "high" },
-  { href: serverDell01Png, type: "image/png", priority: "high" },
-  { href: serverDell02Png, type: "image/png", priority: "high" },
-  { href: serverDell03Png, type: "image/png", priority: "high" },
-  { href: serverDell04Png, type: "image/png", priority: "high" },
+  { href: productR660, type: "image/png", priority: "high" },
+  { href: productR760, type: "image/png", priority: "high" },
+  { href: productUnity380F, type: "image/png", priority: "high" },
+  { href: productDS6610B, type: "image/png", priority: "high" },
+  { href: productS5224F, type: "image/png", priority: "high" },
+  { href: productN3248, type: "image/png", priority: "high" },
   { href: logoMarkSvg, type: "image/svg+xml", priority: "high" },
   { href: logoTextSvg, type: "image/svg+xml", priority: "high" },
 ];

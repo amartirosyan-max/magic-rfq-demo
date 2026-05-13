@@ -6,16 +6,21 @@ import { useSelection } from "./SelectionContext";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
 import type { Rack as RackType, RackUnit } from "./types";
 import rackFrameUrl from "~/assets/hardware/verstka/Server_BG.png";
-import serverImg01 from "~/assets/hardware/verstka/Server_Dell_01.png";
-import serverImg02 from "~/assets/hardware/verstka/Server_Dell_02.png";
-import serverImg03 from "~/assets/hardware/verstka/Server_Dell_03.png";
-import serverImg04 from "~/assets/hardware/verstka/Server_Dell_04.png";
+/* Real product photos — one per chassis SKU in the proposal. */
+import productR660 from "~/assets/hardware/products/Dell-PowerEdge-R660.png";
+import productR760 from "~/assets/hardware/products/Dell-PowerEdge-R760.png";
+import productUnity380F from "~/assets/hardware/products/DELL-UNITY-XT-380F.png";
+import productDS6610B from "~/assets/hardware/products/Dell-Connectrix-DS-6610B.png";
+import productS5224F from "~/assets/hardware/products/Dell-EMC-S5224F-ON.png";
+import productN3248 from "~/assets/hardware/products/Dell-EMC-N3248TE-ON.png";
 
 const SERVER_IMAGES: Record<string, string> = {
-  "Server_Dell_01.png": serverImg01,
-  "Server_Dell_02.png": serverImg02,
-  "Server_Dell_03.png": serverImg03,
-  "Server_Dell_04.png": serverImg04,
+  "Dell-PowerEdge-R660.png": productR660,
+  "Dell-PowerEdge-R760.png": productR760,
+  "DELL-UNITY-XT-380F.png": productUnity380F,
+  "Dell-Connectrix-DS-6610B.png": productDS6610B,
+  "Dell-EMC-S5224F-ON.png": productS5224F,
+  "Dell-EMC-N3248TE-ON.png": productN3248,
 };
 
 /**
