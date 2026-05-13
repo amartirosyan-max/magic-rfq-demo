@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { useComponentEdits } from "./ComponentEditsContext";
 import { useSelection } from "./SelectionContext";
 import type {
   ComponentCategory,
@@ -94,6 +95,12 @@ export interface ScreenCProps {
 export function ScreenC({ subsystem }: ScreenCProps) {
   const chassisImg = SERVER_IMAGES[subsystem.chassis.image];
   const { selectedCategoryId, selectCategory, selectUnit } = useSelection();
+  const { effectiveComponents } = useComponentEdits();
+  /* `subsystem.components` is the static BoQ; `editedComponents` overlays
+   * the user's qty / description / delete tweaks from `ComponentEditsContext`.
+   * Screen C reads from the overlay so edits survive subsystem navigation
+   * without ever mutating `hardwareProject`. */
+  const editedComponents = effectiveComponents(subsystem);
 
   /* The "Screen C focus" model:
    *   - selectedCategoryId === null  → the chassis hero is the active focus
@@ -138,10 +145,10 @@ export function ScreenC({ subsystem }: ScreenCProps) {
         <PageTitle subsystem={subsystem} />
         
         <div className="flex flex-col gap-2.5 overflow-y-auto px-28 py-2">
-          {subsystem.components.length === 0 ? (
+          {editedComponents.length === 0 ? (
             <EmptyState />
           ) : (
-            subsystem.components.map((component, idx) => (
+            editedComponents.map((component, idx) => (
               <ComponentCard
                 key={component.id}
                 component={component}
@@ -204,9 +211,11 @@ function ComponentCard({
   onSelect: () => void;
 }) {
   const Icon = CATEGORY_ICON[component.category];
-  /* All cards should emerge from the same lower origin area (under the
-   * main chassis block), not from the list center. Keep one constant
-   * starting Y for every row. */
+  /* Read-only row per Dr. Artemy's 2026-05-13 review: every edit
+   * (qty +/-, swap SKU, delete, restore) is performed in the right-sidebar
+   * Catalog. Clicking the row selects its category, which opens the
+   * Catalog into the SKU list for this category. The hint pill on the
+   * right ("Edit in catalog →") makes the affordance discoverable. */
   const enterFromY = 520;
   /* Gate the hover/tap micro-interactions behind the entry spring. If
    * the user's cursor happens to be where the card lands, `whileHover`
@@ -214,6 +223,7 @@ function ComponentCard({
    * (the card jitters / never fully settles). We flip this to true the
    * moment the entry animation completes. */
   const [entered, setEntered] = useState(false);
+
   return (
     <motion.div
       role="button"
@@ -255,25 +265,30 @@ function ComponentCard({
         />
       </div>
 
-      {/* White card: count + divider + title/description. */}
+      {/* White card: static qty pill + divider + title/description. */}
       <div
         className={cn(
-          "flex min-h-[62px] flex-1 items-center rounded-[5px] px-2.5 py-2.5 transition-[box-shadow,transform,background-color,border-color] duration-150",
+          "relative flex min-h-[62px] flex-1 items-center rounded-[5px] px-2.5 py-2.5 transition-[box-shadow,transform,background-color,border-color] duration-150",
           selected
             ? "bg-white ring-2 ring-teal-400 shadow-[0_2px_4px_rgba(15,23,42,0.10),0_10px_24px_rgba(13,148,136,0.25)]"
             : "bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06),0_3px_10px_rgba(15,23,42,0.08)] group-hover:shadow-[0_2px_4px_rgba(15,23,42,0.10),0_6px_18px_rgba(15,23,42,0.14)]",
         )}
       >
-        {/* Count has no background. */}
-        <div className="flex h-full min-w-[58px] items-center justify-center pr-3 text-[34px] font-bold leading-none text-slate-900">
-          <span className="text-[20px] tabular-nums">{component.qty}</span>
-          <span className="ml-2 text-[15px] font-semibold text-slate-400">x</span>
+        {/* Static count pill — qty edits live in the Catalog. Size matches
+            the pre-edit-feature pill (text-[20px] number, text-[15px] "x"). */}
+        <div className="flex h-full min-w-[58px] items-center justify-center pr-3 leading-none text-slate-900">
+          <span className="text-[20px] font-bold tabular-nums">
+            {component.qty}
+          </span>
+          <span className="ml-1 text-[15px] font-semibold text-slate-400">
+            x
+          </span>
         </div>
 
         {/* Title + description with a gray column divider beside count. */}
         <div className="flex min-w-0 flex-1 flex-col justify-center border-l border-slate-200 pl-4 pr-3">
           <div className="text-[16px] font-semibold leading-tight text-slate-900">
-          {component.categoryLabel}
+            {component.categoryLabel}
           </div>
           <div className="mt-0.5 whitespace-normal break-words text-[14px] leading-snug text-slate-700">
             {component.description}

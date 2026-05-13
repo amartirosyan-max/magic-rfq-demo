@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Minus, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useMemo } from "react";
 import { cn } from "~/lib/utils";
 
@@ -9,6 +9,7 @@ import {
   componentCategoryOrder,
 } from "./catalog-data";
 import { CatalogEntryCard } from "./CatalogEntryCard";
+import { useComponentEdits } from "./ComponentEditsContext";
 import { hardwareProject } from "./fake-data";
 import { useSelection } from "./SelectionContext";
 import { useCatalogScope } from "./useCatalogScope";
@@ -16,6 +17,7 @@ import type {
   CatalogEntry,
   ComponentCategory,
   HardwareComponent,
+  Subsystem,
 } from "./types";
 
 import componentCpuPng from "~/assets/hardware/PNG+SVG/Component_CPU.png";
@@ -99,12 +101,18 @@ export function CatalogPanel() {
 
       <div className="px-1 pb-4 pt-3">
         <AnimatePresence mode="wait">
-          {scope.kind === "project" && <ProjectCatalog key="project" />}
+          {scope.kind === "project" && (
+            <ProjectCatalog
+              key="project"
+              onPickSubsystem={selectSubsystem}
+            />
+          )}
 
           {scope.kind !== "project" && selectedCategoryId && (
             <ComponentCategoryView
-              key={`cat-${selectedCategoryId}`}
+              key={`cat-${selectedCategoryId}-${scope.subsystem.id}`}
               category={selectedCategoryId}
+              subsystem={scope.subsystem}
               installedId={matchInstalledSku(
                 selectedCategoryId,
                 scope.subsystem.components,
@@ -191,10 +199,25 @@ function CatalogBreadcrumb({
 }
 
 /* -------------------------------------------------------------------------- */
-/*  L0 — project catalog (subsystem categories)                                */
+/*  L0 — project catalog: mirrors the left-sidebar subsystem list              */
 /* -------------------------------------------------------------------------- */
 
-function ProjectCatalog() {
+/**
+ * Render the project's actual subsystems (same source as the left
+ * sidebar) — NOT the generic `subsystemCategories` blurbs. Each card
+ * acts as a deep-link: clicking it selects that subsystem and the
+ * panel transitions into L1 (platform alternatives).
+ */
+function ProjectCatalog({
+  onPickSubsystem,
+}: {
+  onPickSubsystem: (id: string) => void;
+}) {
+  const entries = useMemo(
+    () => hardwareProject.subsystems.map(subsystemToCatalogEntry),
+    [],
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
@@ -203,11 +226,35 @@ function ProjectCatalog() {
       transition={{ duration: 0.18 }}
       className="flex flex-col gap-1.5"
     >
-      {hardwareProject.subsystemCategories.map((entry) => (
-        <CatalogEntryCard key={entry.id} entry={entry} />
+      {entries.map((entry) => (
+        <CatalogEntryCard
+          key={entry.id}
+          entry={entry}
+          onClick={() => onPickSubsystem(entry.id)}
+        />
       ))}
     </motion.div>
   );
+}
+
+/**
+ * Project a `Subsystem` (left-sidebar item) onto the shared
+ * `CatalogEntry` shape so the same `CatalogEntryCard` can render it.
+ * Pulls a marketing-friendly summary out of the chassis spec —
+ * description doubles as the card body, `bestFor` carries the "N × …"
+ * count, and `spec` carries the rack-form / vendor / power one-liner.
+ */
+function subsystemToCatalogEntry(subsystem: Subsystem): CatalogEntry {
+  const c = subsystem.chassis;
+  const watts = c.watts ? ` · ${c.watts}W` : "";
+  return {
+    id: subsystem.id,
+    name: subsystem.name,
+    status: "in-proposal",
+    bestFor: `${subsystem.qty} × ${c.name}`,
+    spec: `${c.sizeU}U · ${c.vendor}${watts}`,
+    description: c.description || subsystem.titleSuffix,
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -329,18 +376,79 @@ function ChassisOverview({
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*  L3 — component category view (where the real edit controls live)           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Renders edit controls for ONE component category of the active chassis:
+ *   - "Currently installed" card with qty stepper + delete (or "Restore"
+ *     if the row was deleted earlier this session).
+ *   - "Swap to a different SKU" list below — clicking the action button on
+ *     an alternative rewrites the row's description (and reinstates it if
+ *     it had been deleted).
+ *
+ * This is the single place where component edits happen. Screen C rows
+ * are read-only labels driven by the same `ComponentEditsContext`.
+ */
 function ComponentCategoryView({
   category,
+  subsystem,
   installedId,
 }: {
   category: ComponentCategory;
+  subsystem: Subsystem;
   installedId: string | null;
 }) {
   const list = componentCatalog[category];
+  const {
+    effectiveComponents,
+    setQty,
+    setDescription,
+    deleteComponent,
+    restoreComponent,
+    isDeleted,
+  } = useComponentEdits();
+
+  /* Find the matching component row in the chassis (static BoQ has at
+   * most one row per category). We look it up in the *unedited* list so
+   * we can also surface deleted rows with a "Restore" action. */
+  const installedRow = useMemo<HardwareComponent | null>(() => {
+    return subsystem.components.find((c) => c.category === category) ?? null;
+  }, [subsystem.components, category]);
+
+  /* Apply overlays to get the live qty + description for the row. */
+  const liveRow = useMemo<HardwareComponent | null>(() => {
+    if (!installedRow) return null;
+    const live = effectiveComponents(subsystem).find(
+      (c) => c.id === installedRow.id,
+    );
+    return live ?? installedRow;
+  }, [installedRow, effectiveComponents, subsystem]);
+
+  const deleted = installedRow ? isDeleted(installedRow.id) : false;
+
+  /* New description text used when the user picks an alternative SKU.
+   * Keeps the row scannable — name + spec line if available. */
+  const composeDescription = (entry: CatalogEntry) =>
+    entry.spec ? `${entry.name} — ${entry.spec}` : entry.name;
+
+  const handleSwap = (entry: CatalogEntry) => {
+    if (!installedRow) return;
+    setDescription(installedRow.id, composeDescription(entry));
+    if (deleted) restoreComponent(installedRow.id);
+  };
 
   const ordered = useMemo(
     () => sortBySelectedFirst(list, installedId),
     [list, installedId],
+  );
+
+  /* Alternatives = everything except the currently-installed SKU, so the
+   * action list never repeats what the "Currently installed" card shows. */
+  const alternatives = useMemo(
+    () => ordered.filter((e) => e.id !== installedId),
+    [ordered, installedId],
   );
 
   return (
@@ -349,21 +457,174 @@ function ComponentCategoryView({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -12 }}
       transition={{ duration: 0.2 }}
-      className="flex flex-col"
+      className="flex flex-col gap-3"
     >
+      {installedRow && liveRow ? (
+        <InstalledComponentCard
+          row={liveRow}
+          deleted={deleted}
+          onDec={() => setQty(liveRow.id, liveRow.qty - 1)}
+          onInc={() => setQty(liveRow.id, liveRow.qty + 1)}
+          onDelete={() => deleteComponent(liveRow.id)}
+          onRestore={() => restoreComponent(liveRow.id)}
+        />
+      ) : (
+        <SectionHint
+          body={`No ${componentCategoryLabel[category]} row in this chassis yet — pick one below to add it.`}
+        />
+      )}
+
       <SectionHint
-        body={`${list.length} ${componentCategoryLabel[category]} SKUs available. ${
-          installedId
-            ? "The one installed in this chassis is at the top, highlighted."
-            : "None of these match the installed SKU yet."
-        }`}
+        body={
+          installedRow
+            ? `Swap to a different SKU — ${alternatives.length} compatible ${componentCategoryLabel[category]} options.`
+            : `${alternatives.length} ${componentCategoryLabel[category]} SKUs available.`
+        }
       />
-      <div className="mt-2 flex flex-col gap-1.5">
-        {ordered.map((entry) => (
-          <CatalogEntryCard key={entry.id} entry={entry} />
+      <div className="flex flex-col gap-1.5">
+        {alternatives.map((entry) => (
+          <CatalogEntryCard
+            key={entry.id}
+            entry={entry}
+            actionLabel={deleted ? "Add" : "Swap"}
+            onAction={() => handleSwap(entry)}
+          />
         ))}
       </div>
     </motion.div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  InstalledComponentCard — qty stepper + delete / restore                    */
+/* -------------------------------------------------------------------------- */
+
+function InstalledComponentCard({
+  row,
+  deleted,
+  onDec,
+  onInc,
+  onDelete,
+  onRestore,
+}: {
+  row: HardwareComponent;
+  deleted: boolean;
+  onDec: () => void;
+  onInc: () => void;
+  onDelete: () => void;
+  onRestore: () => void;
+}) {
+  return (
+    <article
+      className={cn(
+        "rounded-xl border bg-white px-4 py-3 transition-colors",
+        deleted
+          ? "border-slate-200 ring-1 ring-slate-100 opacity-75"
+          : "border-teal-300/80 bg-teal-50/30 ring-1 ring-teal-200/60",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            {deleted ? "Removed from chassis" : "Currently installed"}
+          </p>
+          <h3 className="mt-0.5 text-[14px] font-semibold leading-snug text-slate-900">
+            {row.categoryLabel}
+          </h3>
+          <p className="mt-0.5 break-words text-[12.5px] leading-snug text-slate-600">
+            {row.description}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        {/* Qty stepper — disabled when the row is deleted (qty has no
+            meaning until the row is restored). */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Per chassis
+          </span>
+          <div className="flex items-center gap-1.5">
+            <StepperButton
+              onClick={onDec}
+              disabled={deleted || row.qty <= 1}
+              label="Decrease quantity"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </StepperButton>
+            <span className="min-w-[26px] text-center text-[16px] font-bold leading-none tabular-nums text-slate-900">
+              {row.qty}
+            </span>
+            <StepperButton
+              onClick={onInc}
+              disabled={deleted}
+              label="Increase quantity"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </StepperButton>
+          </div>
+        </div>
+
+        {/* Delete / restore button — clicking again toggles state. */}
+        {deleted ? (
+          <button
+            type="button"
+            onClick={onRestore}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-[12px] font-medium text-sky-700",
+              "hover:border-sky-300 hover:bg-sky-100",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300",
+            )}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Restore
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onDelete}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-[12px] font-medium text-rose-600",
+              "hover:border-rose-300 hover:bg-rose-100",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300",
+            )}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function StepperButton({
+  onClick,
+  disabled,
+  label,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={cn(
+        "grid h-7 w-7 place-items-center rounded-md border text-slate-700 transition-colors",
+        "border-slate-200 bg-white hover:border-teal-400 hover:bg-teal-50 hover:text-teal-700",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300",
+        disabled &&
+          "cursor-not-allowed opacity-40 hover:border-slate-200 hover:bg-white hover:text-slate-700",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

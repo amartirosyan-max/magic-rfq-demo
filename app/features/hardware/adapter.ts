@@ -19,6 +19,7 @@ import {
 } from "~/types/project";
 import type { NavItem } from "~/types/navigation";
 import { hardwareProject } from "./fake-data";
+import type { Subsystem } from "./types";
 
 const FAKE_PROJECT_ID = 1001;
 
@@ -70,12 +71,16 @@ export function getFakeProjectPrice(): IProjectPriceResponse {
  * Top-level row = the project itself; each subsystem is nested under it.
  * `selectedSubsystemId` controls which sub-item renders with the "selected"
  * highlight — passing `null` clears all sub selections (Screen A default).
+ * `subsystems` is the (optionally edited) list — pass the
+ * `effectiveSubsystems` projection from `SubsystemEditsContext` so
+ * deletes and renames flow into the sidebar.
  *
  * URLs are placeholders; the hardware demo intercepts clicks via
  * `onItemSelect` on `<NavMain>`, so they never actually navigate.
  */
 export function getFakeNavItems(
   selectedSubsystemId: string | null = null,
+  subsystems: Subsystem[] = hardwareProject.subsystems,
 ): NavItem[] {
   return [
     {
@@ -86,7 +91,7 @@ export function getFakeNavItems(
       isSelected: true,
       hr_uid: null,
       category: "infrastructure",
-      items: hardwareProject.subsystems.map((s) => ({
+      items: subsystems.map((s) => ({
         title: s.name,
         url: `/avaya#${s.id}`,
         isActive: false,

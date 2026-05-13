@@ -5,6 +5,7 @@ import { SidebarRight } from "~/components/sidebar-right";
 import { DiagramProvider } from "~/context/DiagramContext";
 import formatToUSD from "~/utils/formatUSD";
 import { CatalogPanel } from "./CatalogPanel";
+import { ComponentEditsProvider } from "./ComponentEditsContext";
 import { HardwareLogo } from "./HardwareLogo";
 import {
   getFakeNavItems,
@@ -13,6 +14,10 @@ import {
 } from "./adapter";
 import { hardwareProject } from "./fake-data";
 import { SelectionProvider, useSelection } from "./SelectionContext";
+import {
+  SubsystemEditsProvider,
+  useSubsystemEdits,
+} from "./SubsystemEditsContext";
 
 /**
  * Three-column shell for the hardware configurator demo.
@@ -30,18 +35,29 @@ import { SelectionProvider, useSelection } from "./SelectionContext";
 export function HardwareLayout({ children }: { children: ReactNode }) {
   return (
     <SelectionProvider>
-      <HardwareLayoutInner>{children}</HardwareLayoutInner>
+      <SubsystemEditsProvider>
+        <ComponentEditsProvider>
+          <HardwareLayoutInner>{children}</HardwareLayoutInner>
+        </ComponentEditsProvider>
+      </SubsystemEditsProvider>
     </SelectionProvider>
   );
 }
 
 function HardwareLayoutInner({ children }: { children: ReactNode }) {
   const { selectedSubsystemId, selectSubsystem } = useSelection();
+  const { effectiveSubsystems } = useSubsystemEdits();
   const project = getFakeProject();
   const projectPriceData = getFakeProjectPrice();
+  /* Project the subsystem-edit overlay (renames + deletes) into the nav
+   * so the left sidebar reflects renamed labels and skips deleted rows. */
+  const editedSubsystems = useMemo(
+    () => effectiveSubsystems(hardwareProject.subsystems),
+    [effectiveSubsystems],
+  );
   const navItems = useMemo(
-    () => getFakeNavItems(selectedSubsystemId),
-    [selectedSubsystemId],
+    () => getFakeNavItems(selectedSubsystemId, editedSubsystems),
+    [selectedSubsystemId, editedSubsystems],
   );
 
   return (

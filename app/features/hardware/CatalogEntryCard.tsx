@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, Square, X } from "lucide-react";
+import { ArrowLeftRight, Plus, Square, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { StatusBadge } from "./StatusBadge";
 import type { CatalogEntry, CatalogStatus } from "./types";
@@ -34,6 +34,8 @@ export function CatalogEntryCard({
   selected,
   onClick,
   className,
+  actionLabel,
+  onAction,
 }: {
   entry: CatalogEntry;
   /** Visual override: forces the "currently in proposal" ring even when
@@ -42,6 +44,13 @@ export function CatalogEntryCard({
   selected?: boolean;
   onClick?: () => void;
   className?: string;
+  /** When set, the decorative `+ □ ×` trio is replaced by a single
+   *  primary action button (e.g. "Swap", "Add"). The button fires
+   *  `onAction` and stops propagation so the surrounding `onClick`
+   *  selector behaviour stays intact. Used by the component-category
+   *  view in the right sidebar to drive real edits. */
+  actionLabel?: string;
+  onAction?: () => void;
 }) {
   const inProposal = selected ?? entry.status === "in-proposal";
 
@@ -77,11 +86,23 @@ export function CatalogEntryCard({
         ) : null}
       </header>
 
-      <div className="mt-3 flex gap-2">
-        <ActionButton kind="add" status={entry.status} />
-        <ActionButton kind="edit" status={entry.status} />
-        <ActionButton kind="remove" status={entry.status} />
-      </div>
+      {actionLabel && onAction ? (
+        <div className="mt-3">
+          <PrimaryActionButton
+            label={actionLabel}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction();
+            }}
+          />
+        </div>
+      ) : (
+        <div className="mt-3 flex gap-2">
+          <ActionButton kind="add" status={entry.status} />
+          <ActionButton kind="edit" status={entry.status} />
+          <ActionButton kind="remove" status={entry.status} />
+        </div>
+      )}
 
       {entry.spec ? (
         <p className="mt-3 text-[12.5px] leading-snug text-slate-500">
@@ -98,6 +119,31 @@ export function CatalogEntryCard({
         {entry.description}
       </p>
     </motion.article>
+  );
+}
+
+function PrimaryActionButton({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.97 }}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border border-teal-300 bg-teal-50 px-3 py-1.5 text-[12px] font-semibold text-teal-700 transition-colors",
+        "hover:border-teal-400 hover:bg-teal-100",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300",
+      )}
+    >
+      <ArrowLeftRight className="h-3.5 w-3.5" />
+      {label}
+    </motion.button>
   );
 }
 

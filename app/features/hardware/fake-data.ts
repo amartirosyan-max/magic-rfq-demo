@@ -261,65 +261,86 @@ const subsystems: Subsystem[] = [
 ];
 
 /* -------------------------------------------------------------------------- */
-/*  Racks — U layout per DATA-ANALYSIS.md §8.1                                 */
+/*  Racks — U layout per Dr. Artemy review (Perplexity redistribution)         */
 /* -------------------------------------------------------------------------- */
 
-/** Generate sequential same-size units for a server cluster, top-down.
- *  `startIndex` lets us split a single subsystem across multiple racks
- *  without colliding on unit IDs (e.g. half of the Hyper-v cluster in
- *  Rack 01 → 1..7, the other half in Rack 02 → 8..14). */
-function fillCluster(
+/* Layout principles (Dr. Artemy review, 2026-05-13):
+ *   1. Use Perplexity's split — Rack 01 carries the VMware pair, 8 × R660
+ *      and the management / ToR switches; Rack 02 carries the Unity 380F,
+ *      the remaining 6 × R660 and the SAN switches.
+ *   2. The bottom-most device sits at U8 (not U1) so neither rack looks
+ *      bottom-heavy on the canvas.
+ *   3. The "blue" R660 cluster is lifted ~6 U above where the Perplexity
+ *      sketch had it, giving it the visual mid-rack centre.
+ *   4. 1 U airflow gap between every R660; switches and the Unity sit as
+ *      a contiguous block to read as one assembly.
+ *
+ *  Rack 01 (compute + switches)
+ *  ──────────────────────────────────────────────
+ *    U33        N3248TE-ON          (Management Switch)
+ *    U32        S5224F-ON #2        (ToR Switches)
+ *    U31        S5224F-ON #1        (ToR Switches)
+ *    U28        R660 #8             (Hyper-v cluster)
+ *    U26        R660 #7
+ *    U24        R660 #6
+ *    U22        R660 #5
+ *    U20        R660 #4
+ *    U18        R660 #3
+ *    U16        R660 #2
+ *    U14        R660 #1
+ *    U11..U12   R760 #2  (2 U)      (VMware cluster)
+ *    U8 ..U9    R760 #1  (2 U)
+ *
+ *  Rack 02 (storage + remaining compute)
+ *  ──────────────────────────────────────────────
+ *    U24        DS-6610B #2         (SAN Switches)
+ *    U23        DS-6610B #1
+ *    U21        R660 #14            (Hyper-v cluster, second half)
+ *    U19        R660 #13
+ *    U17        R660 #12
+ *    U15        R660 #11
+ *    U13        R660 #10
+ *    U11        R660 #9
+ *    U8 ..U9    Unity 380F (2 U)    (SAN Storage)
+ */
+
+/** Generate the R660-style cluster with a 1 U airflow gap between each
+ *  unit. `startBottomU` is the U of the bottom-most unit; the cluster
+ *  grows upward in 2 U steps (1 U device + 1 U gap).
+ *  `startIndex` lets a single subsystem be split across racks (1..8 in
+ *  Rack 01, 9..14 in Rack 02) without ID collisions. */
+function spacedCluster(
   subsystemId: string,
   count: number,
-  startTopU: number,
-  sizeU = 1,
+  startBottomU: number,
   startIndex = 1,
 ): RackUnit[] {
   const units: RackUnit[] = [];
   for (let i = 0; i < count; i++) {
-    const positionU = startTopU - i * sizeU - (sizeU - 1);
     units.push({
       id: `${subsystemId}-${startIndex + i}`,
       subsystemId,
-      positionU,
-      sizeU,
+      positionU: startBottomU + i * 2,
+      sizeU: 1,
     });
   }
   return units;
 }
 
-/* Rack 01 — Hyper-v pod A + Shared storage, 12U used.
- *  U42        N3248TE-ON         (Management Switch)
- *  U41        S5224F-ON #1       (ToR Switches)
- *  U40        DS-6610B #1        (SAN Switches)
- *  U39..U33   R660 × 7           (Hyper-v cluster, half) — #1 topmost @ U39
- *  U32..U31   Unity 380F         (SAN Storage)           — 2U, positionU = 31
- *
- * The 14-node Hyper-v cluster is intentionally split across the two racks
- * so neither rack is overstuffed; the BoQ totals (14× R660, 1× Unity, etc.)
- * are unchanged.
- */
 const rack01Units: RackUnit[] = [
-  { id: "mgmt-switch-1", subsystemId: "mgmt-switch", positionU: 42, sizeU: 1 },
-  { id: "tor-switches-1", subsystemId: "tor-switches", positionU: 41, sizeU: 1 },
-  { id: "san-switches-1", subsystemId: "san-switches", positionU: 40, sizeU: 1 },
-  ...fillCluster("hyper-v-cluster", 7, 39, 1, 1),
-  { id: "san-storage-1", subsystemId: "san-storage", positionU: 31, sizeU: 2 },
+  { id: "vmware-cluster-1", subsystemId: "vmware-cluster", positionU: 8, sizeU: 2 },
+  { id: "vmware-cluster-2", subsystemId: "vmware-cluster", positionU: 11, sizeU: 2 },
+  ...spacedCluster("hyper-v-cluster", 8, 14, 1),
+  { id: "tor-switches-1", subsystemId: "tor-switches", positionU: 31, sizeU: 1 },
+  { id: "tor-switches-2", subsystemId: "tor-switches", positionU: 32, sizeU: 1 },
+  { id: "mgmt-switch-1", subsystemId: "mgmt-switch", positionU: 33, sizeU: 1 },
 ];
 
-/* Rack 02 — Hyper-v pod B + VMware, 13U used.
- *  U42        S5224F-ON #2       (ToR Switches)
- *  U41        DS-6610B #2        (SAN Switches)
- *  U40..U34   R660 × 7           (Hyper-v cluster, second half, #8 @ U40)
- *  U33..U32   R760 #1            (VMware cluster, 2U, positionU = 32)
- *  U31..U30   R760 #2            (VMware cluster, 2U, positionU = 30)
- */
 const rack02Units: RackUnit[] = [
-  { id: "tor-switches-2", subsystemId: "tor-switches", positionU: 42, sizeU: 1 },
-  { id: "san-switches-2", subsystemId: "san-switches", positionU: 41, sizeU: 1 },
-  ...fillCluster("hyper-v-cluster", 7, 40, 1, 8),
-  { id: "vmware-cluster-1", subsystemId: "vmware-cluster", positionU: 32, sizeU: 2 },
-  { id: "vmware-cluster-2", subsystemId: "vmware-cluster", positionU: 30, sizeU: 2 },
+  { id: "san-storage-1", subsystemId: "san-storage", positionU: 8, sizeU: 2 },
+  ...spacedCluster("hyper-v-cluster", 6, 11, 9),
+  { id: "san-switches-1", subsystemId: "san-switches", positionU: 23, sizeU: 1 },
+  { id: "san-switches-2", subsystemId: "san-switches", positionU: 24, sizeU: 1 },
 ];
 
 const racks: Rack[] = [
