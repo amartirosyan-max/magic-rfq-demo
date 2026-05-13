@@ -30,7 +30,7 @@ const r660Chassis: Chassis = {
   name: "Dell PowerEdge R660",
   vendor: "dell",
   sizeU: 1,
-  image: "Server_Dell_01.png",
+  image: "Dell-PowerEdge-R660.png",
   description:
     "1U two-socket rack server for dense database analytics and high-density virtualization.",
   watts: 800,
@@ -41,7 +41,7 @@ const r760Chassis: Chassis = {
   name: "Dell PowerEdge R760",
   vendor: "dell",
   sizeU: 2,
-  image: "Server_Dell_02.png",
+  image: "Dell-PowerEdge-R760.png",
   description:
     "2U two-socket rack server for mixed workload standardization, virtualization and analytics.",
   watts: 1100,
@@ -52,7 +52,7 @@ const unity380fChassis: Chassis = {
   name: "Dell EMC Unity 380F",
   vendor: "dell",
   sizeU: 2,
-  image: "Server_Dell_03.png",
+  image: "DELL-UNITY-XT-380F.png",
   description:
     "2U dual-active-controller all-flash midrange storage array with 25 × 2.5\" drive slots.",
   watts: 600,
@@ -63,7 +63,7 @@ const ds6610bChassis: Chassis = {
   name: "Connectrix DS-6610B",
   vendor: "dell",
   sizeU: 1,
-  image: "Server_Dell_04.png",
+  image: "Dell-Connectrix-DS-6610B.png",
   description:
     "1U 24-port 16Gb Fibre Channel SAN switch, rear-to-front airflow, single PSU.",
   watts: 150,
@@ -74,7 +74,7 @@ const s5224fChassis: Chassis = {
   name: "Dell EMC S5224F-ON",
   vendor: "dell",
   sizeU: 1,
-  image: "Server_Dell_04.png",
+  image: "Dell-EMC-S5224F-ON.png",
   description:
     "1U 24 × 25GbE SFP28 + 4 × 100GbE QSFP28 ToR switch, IO to PSU airflow, dual PSU.",
   watts: 200,
@@ -85,7 +85,7 @@ const n3248Chassis: Chassis = {
   name: "Dell EMC N3248TE-ON",
   vendor: "dell",
   sizeU: 1,
-  image: "Server_Dell_04.png",
+  image: "Dell-EMC-N3248TE-ON.png",
   description:
     "1U 48 × 1GbE + 4 × 10G SFP+ + 2 × 100G QSFP28 management switch, single AC PSU.",
   watts: 120,
