@@ -34,6 +34,7 @@
  * collapses the list before it ever reaches the network.
  */
 
+import bgBlueJpg from "~/assets/hardware/PNG+SVG/BG_Blue.jpg";
 import gridTilePng from "~/assets/hardware/PNG+SVG/BG_Blue_Grid_Tile_2.png";
 import logoMarkSvg from "~/assets/hardware/verstka/Logo.svg";
 import logoTextSvg from "~/assets/hardware/verstka/Logo_text.svg";
@@ -57,13 +58,17 @@ import componentRamPng from "~/assets/hardware/PNG+SVG/Component_RAM.png";
 
 export interface PreloadAsset {
   href: string;
-  type: "image/png" | "image/svg+xml";
+  type: "image/png" | "image/jpeg" | "image/svg+xml";
   /** "high" jumps the network queue, "auto" lets the browser decide. */
   priority: "high" | "auto";
 }
 
 /** Visible on first paint of /avaya — rack canvas + top chrome + sidebar logo. */
 const critical: PreloadAsset[] = [
+  /* BG_Blue.jpg is the cover-fill base of the entire canvas (per
+   * Dr. Artemy's 2026-05-13 design comment) — biggest visible surface
+   * on first paint, so it leads the high-priority list. */
+  { href: bgBlueJpg, type: "image/jpeg", priority: "high" },
   { href: gridTilePng, type: "image/png", priority: "high" },
   { href: rackFramePng, type: "image/png", priority: "high" },
   { href: serverDell01Png, type: "image/png", priority: "high" },

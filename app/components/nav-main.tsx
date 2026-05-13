@@ -61,7 +61,7 @@ function NavMenuItem({
     >
       <SidebarMenuItem>
         <div
-          className={`flex items-center gap-2 px-2.5 border border-[var(--active-tab)] ${
+          className={`flex items-center gap-2 rounded-sm px-2.5 border border-[var(--active-tab)] ${
             item.isSelected
               ? "bg-[var(--active-tab)] text-white hover:bg-[var(--active-tab)] hover:text-white"
               : level === 1
@@ -95,7 +95,7 @@ function NavMenuItem({
                   ) : (
                     <SidebarMenuSubButton
                       asChild
-                      className={`${subItem.isSelected ? "bg-[var(--active-tab)] text-white hover:bg-[var(--active-tab)] hover:text-white" : ""}`}
+                      className={`rounded-sm ${subItem.isSelected ? "bg-[var(--active-tab)] text-white hover:bg-[var(--active-tab)] hover:text-white" : ""}`}
                     >
                       <Link
                         to={subItem.url}

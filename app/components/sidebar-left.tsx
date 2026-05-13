@@ -114,7 +114,7 @@ export function SidebarLeft({
         {topSlot}
         <div
           className={cn(
-            "bg-[var(--chat-background)] flex flex-col items-center justify-center gap-2.5 p-4",
+            "bg-[#c2eaff] flex flex-col items-center justify-center gap-2.5 rounded-md p-4",
             !disableHeaderClick && "cursor-pointer",
           )}
           onClick={

@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import bgBlueUrl from "~/assets/hardware/PNG+SVG/BG_Blue.jpg";
 import gridTileUrl from "~/assets/hardware/PNG+SVG/BG_Blue_Grid_Tile_2.png";
 import { ScreenA } from "./ScreenA";
 import { ScreenC } from "./ScreenC";
@@ -21,6 +22,15 @@ import { useActiveSubsystem } from "./useActiveSubsystem";
  *     Screen C — empty canvas clicks do not exit (by design).
  *   - From Screen A, clicking the canvas body clears the rack (handled
  *     inside ScreenA.tsx).
+ *
+ * Background composition (per Dr. Artemy 2026-05-13 design comment):
+ *   - Base layer: `BG_Blue.jpg` from the verstka mock — a brighter blue
+ *     gradient with a soft radial highlight near center-bottom. Stays
+ *     fixed (no zoom) so the gradient's focal point doesn't drift when
+ *     the user dives into a rack.
+ *   - Grid layer: `BG_Blue_Grid_Tile_2.png` tiled at 72 px on top of the
+ *     base. This is the only layer that scales on dive — keeps the
+ *     "step closer" cue without distorting the gradient.
  */
 export function HardwareCanvas() {
   const {
@@ -42,7 +52,19 @@ export function HardwareCanvas() {
     selectedSubsystemId !== null;
 
   return (
-    <section className="relative flex h-full w-full flex-col overflow-hidden bg-[#3b6bb1]">
+    <section
+      className="relative flex h-full w-full flex-col overflow-hidden bg-[#3b6bb1]"
+      style={{
+        /* Brighter-blue base from the design mockup. `bg-[#3b6bb1]`
+         * in className stays as a same-tone fallback that paints the
+         * instant before the JPG decodes (the JPG is preloaded via
+         * `links()` so this fallback is rarely visible). */
+        backgroundImage: `url(${bgBlueUrl})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       {/* Tiled grid texture over the blue canvas.
        *
        * Visual goals:
@@ -53,8 +75,9 @@ export function HardwareCanvas() {
        *     blueprint character is more present without overpowering the
        *     rack contents.
        *   - The zoom-in on "dive" should be a barely-perceptible nudge,
-       *     not a swoop — keeps the canvas calm. Only the background
-       *     scales; racks live in their own subtree. */}
+       *     not a swoop — keeps the canvas calm. Only the grid layer
+       *     scales; the BG_Blue gradient and racks live in their own
+       *     subtrees. */}
       <motion.div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-repeat opacity-65"
