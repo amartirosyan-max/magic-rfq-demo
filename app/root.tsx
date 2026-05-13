@@ -7,6 +7,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { loadAllImages } from "~/constants/assetMapping";
+import { hardwarePreloadAssets } from "~/features/hardware/preload-assets";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -27,6 +28,25 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Roboto+Serif:ital,opsz,wght@0,8..144,100..900;1,8..144,100..900&display=swap",
   },
+  /* Hardware-configurator asset preload.
+   *
+   * Lives at the root because react-router is in SPA mode (`ssr: false`):
+   * only the root's `<Links />` output is baked into the static
+   * `build/client/index.html`. Route-level `links()` exports are
+   * resolved client-side AFTER the JS bundle parses, which defeats the
+   * point of a preload. `/` redirects to `/avaya` and the demo is the
+   * primary surface of this app, so eager-fetching the rack + chassis
+   * PNGs here is the cleanest win — the browser's preload scanner kicks
+   * off in parallel with module download instead of waiting for the
+   * route module to mount. See `app/features/hardware/preload-assets.ts`
+   * for the tiering rationale. */
+  ...hardwarePreloadAssets.map((asset) => ({
+    rel: "preload" as const,
+    as: "image" as const,
+    href: asset.href,
+    type: asset.type,
+    fetchPriority: asset.priority,
+  })),
 ];
 
 const envCustomer = import.meta.env.VITE_APP_CUSTOMER;
