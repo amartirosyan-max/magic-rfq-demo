@@ -81,7 +81,7 @@ function BreadcrumbBar() {
   };
 
   return (
-    <div className="pointer-events-auto w-full rounded-md border border-white/10 bg-[rgba(31,49,79,0.38)] px-5 py-2.5 shadow-sm backdrop-blur-md">
+    <div className="pointer-events-auto w-full rounded-md border border-white/10 bg-[rgba(31,49,79,0.60)] px-5 py-2.5 shadow-sm">
       <button
         type="button"
         onClick={goToProject}
@@ -133,7 +133,7 @@ function Tabs() {
   /* Design active by default — Step 5 will wire Questions / Price.
    * Tray #f7f2ee + bordered white pills match design kit Nav_bar_BG / long tabs. */
   return (
-    <div className="pointer-events-auto inline-flex gap-1 rounded-[10px] bg-[#f7f2ee] p-1 shadow-sm">
+    <div className="pointer-events-auto inline-flex gap-2 rounded-[10px] bg-[#f7f2ee] p-2 shadow-sm">
       {TABS.map((t) => {
         const selected = t.id === "design";
         return (
@@ -189,19 +189,19 @@ function CarouselControl() {
   };
 
   return (
-    <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 shadow-sm">
+    <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-sm bg-white px-4 py-1.5 shadow-sm">
       <CarouselArrow direction="left" onClick={() => go(-1)} />
       <div className="flex h-5 items-center gap-1 px-2">
         {selectableRacks.map((rack, i) => (
           <span
             key={rack.id}
             className={cn(
-              "w-[3px] rounded-full transition-colors",
+              "w-[5px] rounded-xss transition-colors",
               hasSelection && i === activeIndex
-                ? "bg-[#2f7be5]"
-                : "bg-[#2f4a73]",
+                ? "bg-[#014881]"
+                : "bg-[#cfcfd1]",
             )}
-            style={{ height: hasSelection && i === activeIndex ? "16px" : "12px" }}
+            style={{ height: hasSelection && i === activeIndex ? "16px" : "16px" }}
           />
         ))}
       </div>

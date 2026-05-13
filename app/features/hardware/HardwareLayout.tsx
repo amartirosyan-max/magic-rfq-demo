@@ -117,10 +117,11 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
           </SidebarInset>
 
           <SidebarRight
-            className="h-screen bg-[var(--chat-background)]"
+            className="h-screen bg-slate-100"
             sidebarMode="options"
             category="infrastructure"
             defaultTab="options"
+            optionsBgColor="#dde5ea"
             catalogSlot={<CatalogPanel />}
             chatSlot={
               <div className="flex h-full items-center justify-center p-6 text-center text-sm text-slate-400">

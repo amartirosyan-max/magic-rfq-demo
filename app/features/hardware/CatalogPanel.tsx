@@ -173,7 +173,7 @@ function CatalogBreadcrumb({
   const canGoUp = scope.kind !== "project" || activeCategory !== null;
 
   return (
-    <div className="sticky top-0 z-10 -mx-[10px] -mt-[10px] flex items-center gap-2 border-b border-slate-200 bg-white/95 px-3 py-2.5 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 -mx-[10px] -mt-[10px] flex items-center gap-2 border-b border-slate-200 bg-[] px-3 py-2.5 backdrop-blur-sm">
       {canGoUp ? (
         <button
           type="button"
@@ -274,6 +274,7 @@ function ProjectCatalog({
             <CatalogEntryCard
               key={entry.id}
               entry={entry}
+              bare
               actionLabel="Restore"
               onAction={() => restoreSubsystem(entry.id)}
             />
@@ -289,6 +290,7 @@ function ProjectCatalog({
           <CatalogEntryCard
             key={entry.id}
             entry={entry}
+            bare
             onClick={() => onPickSubsystem(entry.id)}
           />
         ))}
@@ -461,7 +463,7 @@ function SubsystemEditCard({ subsystem }: { subsystem: Subsystem }) {
   };
 
   return (
-    <article className="rounded-xl border border-[#3744a6]/60 bg-[#3744a6]/[0.05] px-4 py-3 ring-1 ring-[#3744a6]/30">
+    <article className="rounded-md border bg-white px-4 py-3 ring-1 ring-[#3744a6]/30">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         Edit subsystem
       </p>
@@ -847,10 +849,10 @@ function InstalledComponentCard({
   return (
     <article
       className={cn(
-        "rounded-xl border bg-white px-4 py-3 transition-colors",
+        "rounded-md border bg-white px-4 py-3 transition-colors",
         deleted
           ? "border-slate-200 ring-1 ring-slate-100 opacity-75"
-          : "border-[#3744a6]/60 bg-[#3744a6]/[0.05] ring-1 ring-[#3744a6]/30",
+          : "bg-white ring-1 ring-[#3744a6]/30",
       )}
     >
       <div className="flex items-start justify-between gap-3">

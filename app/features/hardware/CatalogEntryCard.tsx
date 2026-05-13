@@ -32,6 +32,7 @@ export function CatalogEntryCard({
   className,
   actionLabel,
   onAction,
+  bare,
 }: {
   entry: CatalogEntry;
   /** Visual override: forces the "currently in proposal" ring even when
@@ -47,6 +48,14 @@ export function CatalogEntryCard({
    *  view in the right sidebar to drive real edits. */
   actionLabel?: string;
   onAction?: () => void;
+  /** L0-only override (per Dr. Artemy's 2026-05-13 review): at the
+   *  Project level every subsystem card is "in proposal" by definition,
+   *  so painting them all with the teal ring is redundant noise. When
+   *  `bare` is true we skip the in-proposal ring/border/tint and use
+   *  a calm white card with a subtle shadow instead. L1/L3 keep the
+   *  ring because there the highlight actually signals "this is the
+   *  chosen SKU among alternatives". */
+  bare?: boolean;
 }) {
   const inProposal = selected ?? entry.status === "in-proposal";
 
@@ -56,8 +65,10 @@ export function CatalogEntryCard({
       whileHover={onClick ? { y: -1 } : undefined}
       className={cn(
         "relative px-4 py-4 transition-colors",
-        inProposal &&
-          "rounded-xl border border-[#3744a6]/60 bg-[#3744a6]/[0.05] ring-1 ring-[#3744a6]/30",
+        "rounded-md bg-white",
+        // !bare &&
+        //   inProposal &&
+        //   "rounded-xl border border-[#3744a6]/60 bg-[#3744a6]/[0.05] ring-1 ring-[#3744a6]/30",
         onClick && "cursor-pointer",
         className,
       )}
