@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { useSelection } from "./SelectionContext";
 import type {
   ComponentCategory,
   HardwareComponent,
@@ -20,6 +21,19 @@ import serverImg01 from "~/assets/hardware/verstka/Server_Dell_01.png";
 import serverImg02 from "~/assets/hardware/verstka/Server_Dell_02.png";
 import serverImg03 from "~/assets/hardware/verstka/Server_Dell_03.png";
 import serverImg04 from "~/assets/hardware/verstka/Server_Dell_04.png";
+/* Component row icons — MUST be static imports so Vite rewrites URLs in
+ * production builds. String paths like `/app/assets/...` are not emitted
+ * to `dist` and always 404 after `npm run build`. */
+import componentCpuPng from "~/assets/hardware/PNG+SVG/Component_CPU.png";
+import componentHddPng from "~/assets/hardware/PNG+SVG/Component_HDD.png";
+import componentNetworkPng from "~/assets/hardware/PNG+SVG/Component_Network.png";
+import componentPowerPng from "~/assets/hardware/PNG+SVG/Component_Power.png";
+import componentRamPng from "~/assets/hardware/PNG+SVG/Component_RAM.png";
+import componentCpuVerstka from "~/assets/hardware/verstka/Component_CPU.png";
+import componentHddVerstka from "~/assets/hardware/verstka/Component_HDD.png";
+import componentNetworkVerstka from "~/assets/hardware/verstka/Component_Network.png";
+import componentPowerVerstka from "~/assets/hardware/verstka/Component_Power.png";
+import componentRamVerstka from "~/assets/hardware/verstka/Component_RAM.png";
 
 /** Chassis image filename → bundled URL. Mirrors `Rack.tsx`. */
 const SERVER_IMAGES: Record<string, string> = {
@@ -40,44 +54,13 @@ const CATEGORY_ICON: Record<ComponentCategory, LucideIcon> = {
   power: Plug,
 };
 
-/* Expected component icon files under `app/assets/hardware/verstka/`.
- * If a file doesn't exist yet, `ComponentIcon` falls back to a Lucide icon.
- * When you add real icons later, keep these names and no code change is needed.
- */
-const CATEGORY_ICON_CANDIDATES: Record<ComponentCategory, string[]> = {
-  cpu: [
-    "/app/assets/hardware/PNG+SVG/Component_CPU.png",
-    "/app/assets/hardware/PNG+SVG/Component_CPU.svg",
-    "/app/assets/hardware/verstka/Component_CPU.png",
-    "/app/assets/hardware/verstka/Component_CPU.svg",
-  ],
-  memory: [
-    "/app/assets/hardware/PNG+SVG/Component_RAM.png",
-    "/app/assets/hardware/PNG+SVG/Component_Memory.png",
-    "/app/assets/hardware/PNG+SVG/Component_Memory.svg",
-    "/app/assets/hardware/verstka/Component_Memory.png",
-    "/app/assets/hardware/verstka/Component_Memory.svg",
-  ],
-  storage: [
-    "/app/assets/hardware/PNG+SVG/Component_HDD.png",
-    "/app/assets/hardware/PNG+SVG/Component_SSD.png",
-    "/app/assets/hardware/PNG+SVG/Component_Storage.png",
-    "/app/assets/hardware/PNG+SVG/Component_Storage.svg",
-    "/app/assets/hardware/verstka/Component_Storage.png",
-    "/app/assets/hardware/verstka/Component_Storage.svg",
-  ],
-  network: [
-    "/app/assets/hardware/PNG+SVG/Component_Network.png",
-    "/app/assets/hardware/PNG+SVG/Component_Network.svg",
-    "/app/assets/hardware/verstka/Component_Network.png",
-    "/app/assets/hardware/verstka/Component_Network.svg",
-  ],
-  power: [
-    "/app/assets/hardware/PNG+SVG/Component_Power.png",
-    "/app/assets/hardware/PNG+SVG/Component_Power.svg",
-    "/app/assets/hardware/verstka/Component_Power.png",
-    "/app/assets/hardware/verstka/Component_Power.svg",
-  ],
+/* Resolved asset URLs (try PNG+SVG first, then verstka copy). */
+const CATEGORY_ICON_URLS: Record<ComponentCategory, readonly string[]> = {
+  cpu: [componentCpuPng, componentCpuVerstka],
+  memory: [componentRamPng, componentRamVerstka],
+  storage: [componentHddPng, componentHddVerstka],
+  network: [componentNetworkPng, componentNetworkVerstka],
+  power: [componentPowerPng, componentPowerVerstka],
 };
 
 export interface ScreenCProps {
@@ -110,6 +93,29 @@ export interface ScreenCProps {
  */
 export function ScreenC({ subsystem }: ScreenCProps) {
   const chassisImg = SERVER_IMAGES[subsystem.chassis.image];
+  const { selectedCategoryId, selectCategory, selectUnit } = useSelection();
+
+  /* The "Screen C focus" model:
+   *   - selectedCategoryId === null  → the chassis hero is the active focus
+   *     (mirrors the right-sidebar showing chassis alternatives or the
+   *     component chip row).
+   *   - selectedCategoryId set       → that component row is the active
+   *     focus, sidebar drills into its SKU list.
+   * Clicking a row toggles its category. Clicking the chassis hero clears
+   * both the category drill AND any unit pin, so we land on the
+   * subsystem-level catalog view (alternatives).
+   */
+  const handlePickCategory = (category: ComponentCategory) => {
+    selectCategory(category === selectedCategoryId ? null : category);
+  };
+
+  const handlePickChassis = () => {
+    /* Drop unit pin so the catalog returns to L1 (alternatives) — useful
+     * when the user came in via a rack-unit click and now wants to see
+     * what else could go in this slot. */
+    selectUnit(null);
+    selectCategory(null);
+  };
 
   return (
     <motion.div
@@ -120,30 +126,41 @@ export function ScreenC({ subsystem }: ScreenCProps) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
     >
-      {/* === Page title ========================================= */}
-      <PageTitle subsystem={subsystem} />
 
-      {/* === Component cards =====================================
-          Rendered ABOVE the chassis hero in DOM order but animated
-          IN from below it (initial y > 0). With staggered delays
-          they cascade upward, reading as "popping out" of the
-          chassis sitting at the bottom. */}
-      <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-28">
-        {subsystem.components.length === 0 ? (
-          <EmptyState />
-        ) : (
-          subsystem.components.map((component, idx) => (
-            <ComponentCard
-              key={component.id}
-              component={component}
-              index={idx}
-            />
-          ))
-        )}
+      {/* === Cards + chassis hero =================================
+          The whole stack is vertically centred in the remaining
+          space below the title (the title hugs the top, this block
+          fills the rest with `flex-1` + `justify-center`).
+          Cards animate IN from below the hero with staggered
+          delays — reading as "popping out" of the chassis. */}
+      <div className="flex flex-1 flex-col justify-center gap-4">
+        {/* === Page title ========================================= */}
+        <PageTitle subsystem={subsystem} />
+        
+        <div className="flex flex-col gap-2.5 overflow-y-auto px-28 py-2">
+          {subsystem.components.length === 0 ? (
+            <EmptyState />
+          ) : (
+            subsystem.components.map((component, idx) => (
+              <ComponentCard
+                key={component.id}
+                component={component}
+                index={idx}
+                selected={selectedCategoryId === component.category}
+                onSelect={() => handlePickCategory(component.category)}
+              />
+            ))
+          )}
+        </div>
+
+        {/* === Chassis hero ====================================== */}
+        <ChassisHero
+          subsystem={subsystem}
+          chassisImg={chassisImg}
+          selected={selectedCategoryId === null}
+          onSelect={handlePickChassis}
+        />
       </div>
-
-      {/* === Chassis hero ======================================== */}
-      <ChassisHero subsystem={subsystem} chassisImg={chassisImg} />
     </motion.div>
   );
 }
@@ -159,7 +176,7 @@ function PageTitle({ subsystem }: { subsystem: Subsystem }) {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -16, opacity: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
-      className="flex shrink-0 items-baseline gap-3 px-1 text-white drop-shadow-sm"
+      className="flex w-full shrink-0 items-baseline justify-center gap-3 px-1 text-white drop-shadow-sm"
     >
       <span className="text-[26px] font-bold leading-none tracking-tight">
         {subsystem.qty} × {subsystem.chassis.name}
@@ -178,20 +195,43 @@ function PageTitle({ subsystem }: { subsystem: Subsystem }) {
 function ComponentCard({
   component,
   index,
+  selected,
+  onSelect,
 }: {
   component: HardwareComponent;
   index: number;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const Icon = CATEGORY_ICON[component.category];
   /* All cards should emerge from the same lower origin area (under the
    * main chassis block), not from the list center. Keep one constant
    * starting Y for every row. */
   const enterFromY = 520;
+  /* Gate the hover/tap micro-interactions behind the entry spring. If
+   * the user's cursor happens to be where the card lands, `whileHover`
+   * would otherwise kick in mid-flight and visually fight the spring
+   * (the card jitters / never fully settles). We flip this to true the
+   * moment the entry animation completes. */
+  const [entered, setEntered] = useState(false);
   return (
     <motion.div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={selected}
       initial={{ y: enterFromY, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: enterFromY, opacity: 0 }}
+      onAnimationComplete={() => setEntered(true)}
+      whileHover={entered ? { y: -1 } : undefined}
+      whileTap={entered ? { scale: 0.99 } : undefined}
       transition={{
         type: "spring",
         stiffness: 220,
@@ -201,7 +241,10 @@ function ComponentCard({
          * really looks like the parts are emerging out of it. */
         delay: 0.18 + index * 0.07,
       }}
-      className="flex w-full items-stretch gap-3"
+      className={cn(
+        "group flex w-full cursor-pointer items-stretch gap-3 rounded-[6px] text-left",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
+      )}
     >
       {/* Icon sits OUTSIDE the white card, as in the reference UI. */}
       <div className="flex w-[52px] shrink-0 items-center justify-center">
@@ -215,8 +258,10 @@ function ComponentCard({
       {/* White card: count + divider + title/description. */}
       <div
         className={cn(
-          "flex min-h-[62px] flex-1 items-center rounded-[5px] bg-white px-2.5 py-2.5",
-          "shadow-[0_1px_2px_rgba(15,23,42,0.06),0_3px_10px_rgba(15,23,42,0.08)]",
+          "flex min-h-[62px] flex-1 items-center rounded-[5px] px-2.5 py-2.5 transition-[box-shadow,transform,background-color,border-color] duration-150",
+          selected
+            ? "bg-white ring-2 ring-teal-400 shadow-[0_2px_4px_rgba(15,23,42,0.10),0_10px_24px_rgba(13,148,136,0.25)]"
+            : "bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06),0_3px_10px_rgba(15,23,42,0.08)] group-hover:shadow-[0_2px_4px_rgba(15,23,42,0.10),0_6px_18px_rgba(15,23,42,0.14)]",
         )}
       >
         {/* Count has no background. */}
@@ -248,7 +293,7 @@ function ComponentIcon({
   fallbackIcon: LucideIcon;
   alt: string;
 }) {
-  const candidates = CATEGORY_ICON_CANDIDATES[category];
+  const candidates = CATEGORY_ICON_URLS[category];
   const [idx, setIdx] = useState(0);
   const [useFallback, setUseFallback] = useState(false);
 
@@ -284,22 +329,46 @@ function ComponentIcon({
 function ChassisHero({
   subsystem,
   chassisImg,
+  selected,
+  onSelect,
 }: {
   subsystem: Subsystem;
   chassisImg: string | undefined;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const watts = subsystem.chassis.watts;
   /* Computed inline so the chassis data stays the source of truth — no
    * stale numbers to keep in sync when we tweak `watts`. */
   const btu = watts ? Math.round(watts * 3.412 * 10) / 10 : undefined;
+  /* Hover/tap micro-interactions only after the entry spring lands —
+   * otherwise an already-hovered cursor pulls the card while it's
+   * still flying in. */
+  const [entered, setEntered] = useState(false);
 
   return (
     <motion.div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={selected}
       initial={{ y: 220, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 220, opacity: 0 }}
+      onAnimationComplete={() => setEntered(true)}
+      whileHover={entered ? { y: -1 } : undefined}
+      whileTap={entered ? { scale: 0.995 } : undefined}
       transition={{ type: "spring", stiffness: 220, damping: 28 }}
-      className="flex shrink-0 items-start gap-5"
+      className={cn(
+        "flex shrink-0 cursor-pointer items-start gap-5 rounded-md text-left",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
+      )}
     >
       {/* Chassis image — sits DIRECTLY on the blueprint (no card behind
           it). Width is fixed-ish so the description card can fill the
@@ -317,9 +386,10 @@ function ChassisHero({
           power/heat badges at the bottom. */}
       <div
         className={cn(
-          "flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-white/95 px-5 py-4",
-          "shadow-[0_1px_2px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.10)]",
-          "ring-1 ring-slate-200/80",
+          "flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-white/95 px-5 py-4 transition-[box-shadow,border-color] duration-150",
+          selected
+            ? "ring-2 ring-teal-400 shadow-[0_2px_6px_rgba(15,23,42,0.10),0_14px_28px_rgba(13,148,136,0.28)]"
+            : "ring-1 ring-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.10)] hover:ring-slate-300",
         )}
       >
         <h2 className="text-[16px] font-semibold leading-tight text-slate-900">

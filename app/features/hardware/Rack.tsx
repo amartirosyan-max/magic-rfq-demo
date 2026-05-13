@@ -72,10 +72,17 @@ const UNIT_HOVER_RING_RADIUS = "rounded-[5px]";
 const UNIT_HOVER_RING_COLOR = "bg-white";
 const UNIT_HOVER_SCALE = 1.08;
 
+export interface RackColumnLabel {
+  /** First line (e.g. subsystem / role name). */
+  line1: string;
+  /** Second line — rack id, e.g. "RACK 01". */
+  line2: string;
+}
+
 interface RackProps {
   rack: RackType;
-  /** Optional column header shown above the rack on Screen A. */
-  columnLabel?: string;
+  /** Optional two-line column header above the rack on Screen A. */
+  columnLabel?: RackColumnLabel;
 }
 
 export function Rack({ rack, columnLabel }: RackProps) {
@@ -182,14 +189,19 @@ export function Rack({ rack, columnLabel }: RackProps) {
           scaled motion.div so it tracks the rack's visual top at every
           scale (1.15 selected, 0.75 flanking, 1.0 idle). */}
       {columnLabel ? (
-        <span
+        <div
           className={cn(
-            "pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-center text-[13px] font-semibold leading-tight text-white drop-shadow-sm transition-opacity",
+            "pointer-events-none absolute -top-[3.35rem] left-1/2 flex -translate-x-1/2 flex-col items-center gap-0.5 text-center text-white drop-shadow-sm transition-opacity",
             isOther && "opacity-50",
           )}
         >
-          {columnLabel}
-        </span>
+          <span className="max-w-[14rem] text-[15px] font-semibold leading-snug">
+            {columnLabel.line1}
+          </span>
+          <span className="text-[18px] font-bold leading-none tracking-wide">
+            {columnLabel.line2}
+          </span>
+        </div>
       ) : null}
 
       <img
