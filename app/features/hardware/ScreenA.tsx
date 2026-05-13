@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { hardwareProject } from "./fake-data";
-import { Rack } from "./Rack";
+import { Rack, type RackColumnLabel } from "./Rack";
 import { useSelection } from "./SelectionContext";
 
 /**
@@ -67,7 +67,7 @@ export function ScreenA() {
           <Rack
             key={rack.id}
             rack={rack}
-            columnLabel={rack.isEmpty ? "" : labelFor(idx)}
+            columnLabel={rack.isEmpty ? undefined : labelFor(idx)}
           />
         ))}
       </motion.div>
@@ -76,11 +76,11 @@ export function ScreenA() {
 }
 
 /**
- * Column labels shown above each rack on Screen A.
+ * Column labels shown above each rack on Screen A (two lines: title + RACK nn).
  * Index map: 0 = empty-left, 1 = Rack 01, 2 = Rack 02, 3 = empty-right.
  */
-function labelFor(idx: number): string {
-  if (idx === 1) return "Infrastructure Rack 01";
-  if (idx === 2) return "Infrastructure Rack 02";
-  return "";
+function labelFor(idx: number): RackColumnLabel | undefined {
+  if (idx === 1) return { line1: "Infrastructure", line2: "Rack 01" };
+  if (idx === 2) return { line1: "Infrastructure", line2: "Rack 02" };
+  return undefined;
 }

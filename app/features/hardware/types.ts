@@ -123,6 +123,18 @@ export interface CatalogEntry {
   description: string;
   /** Optional image filename under `app/assets/hardware/verstka/` */
   image?: string;
+
+  /* -------------- Optional enrichments (Catalog L1 / L2) -----------------
+   * These let the same `<CatalogEntryCard>` represent project-level
+   * subsystem categories AND product-level alternatives (servers, SAN,
+   * switches, CPUs, RAM, …) without forking the visual identity. */
+  /** Formatted price string, e.g. "~$4,500" or "$5,945" (RCP). */
+  price?: string;
+  /** Short marketing tag — "Dense compute nodes", "5th Gen". */
+  bestFor?: string;
+  /** Optional one-liner spec row above the description, e.g.
+   *  "32C / 64T · 300W · 60MB L3". */
+  spec?: string;
 }
 
 /* -------------------------------------------------------------------------- */

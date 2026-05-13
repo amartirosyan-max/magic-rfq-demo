@@ -4,7 +4,7 @@ import { SidebarLeft } from "~/components/sidebar-left";
 import { SidebarRight } from "~/components/sidebar-right";
 import { DiagramProvider } from "~/context/DiagramContext";
 import formatToUSD from "~/utils/formatUSD";
-import { CatalogEntryCard } from "./CatalogEntryCard";
+import { CatalogPanel } from "./CatalogPanel";
 import { HardwareLogo } from "./HardwareLogo";
 import {
   getFakeNavItems,
@@ -82,13 +82,7 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
             sidebarMode="options"
             category="infrastructure"
             defaultTab="options"
-            catalogSlot={
-              <div className="flex flex-col gap-2 divide-y divide-slate-100">
-                {hardwareProject.subsystemCategories.map((entry) => (
-                  <CatalogEntryCard key={entry.id} entry={entry} />
-                ))}
-              </div>
-            }
+            catalogSlot={<CatalogPanel />}
             chatSlot={
               <div className="flex h-full items-center justify-center p-6 text-center text-sm text-slate-400">
                 Magic AI Advisor — coming soon.

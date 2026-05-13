@@ -36,7 +36,7 @@ export function TopChrome() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-2 px-6 pt-4">
       <BreadcrumbBar />
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center mt-3">
         <div className="flex">
           <Tabs />
         </div>
@@ -64,7 +64,7 @@ export function TopChrome() {
 function BreadcrumbBar() {
   /* Append "› {subsystem}" when Screen C is active so the breadcrumb
    * reflects the navigation depth — e.g.
-   *   PROJECT › Avaya POD Cluster – IPO200 › Hyper-v Cluster
+   *   Project › Avaya POD Cluster – IPO200 › Hyper-v Cluster
    */
   const activeSubsystem = useActiveSubsystem();
   const { selectSubsystem, selectUnit } = useSelection();
@@ -81,11 +81,11 @@ function BreadcrumbBar() {
   };
 
   return (
-    <div className="pointer-events-auto w-full rounded-md bg-[rgba(31,49,79,0.6)] px-5 py-2.5 shadow-sm backdrop-blur-sm">
+    <div className="pointer-events-auto w-full rounded-md border border-white/10 bg-[rgba(31,49,79,0.38)] px-5 py-2.5 shadow-sm backdrop-blur-md">
       <button
         type="button"
         onClick={goToProject}
-        className="text-[12px] uppercase tracking-wider text-slate-300 hover:text-white"
+        className="text-[12px] font-medium tracking-wide text-slate-300 hover:text-white"
       >
         Project
       </button>
@@ -130,24 +130,28 @@ function BreadcrumbBar() {
 }
 
 function Tabs() {
-  /* Design active by default — Step 5 will wire Questions / Price. */
+  /* Design active by default — Step 5 will wire Questions / Price.
+   * Tray #f7f2ee + bordered white pills match design kit Nav_bar_BG / long tabs. */
   return (
-    <div className="pointer-events-auto inline-flex gap-1 rounded-md bg-white p-1 shadow-sm">
-      {TABS.map((t) => (
-        <button
-          key={t.id}
-          type="button"
-          disabled={t.id !== "design"}
-          className={cn(
-            "rounded-md px-5 py-1.5 text-sm font-medium transition-colors",
-            t.id === "design"
-              ? "bg-[#2f7be5] text-white shadow-sm"
-              : "bg-transparent text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed",
-          )}
-        >
-          {t.label}
-        </button>
-      ))}
+    <div className="pointer-events-auto inline-flex gap-1 rounded-[10px] bg-[#f7f2ee] p-1 shadow-sm">
+      {TABS.map((t) => {
+        const selected = t.id === "design";
+        return (
+          <button
+            key={t.id}
+            type="button"
+            disabled={t.id !== "design"}
+            className={cn(
+              "rounded-lg border border-[#dbdbdb] px-5 py-1.5 text-sm font-medium transition-colors",
+              selected
+                ? "bg-[#004986] text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400",
+            )}
+          >
+            {t.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
