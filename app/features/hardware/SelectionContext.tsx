@@ -37,6 +37,15 @@ interface SelectionContextValue {
   selectUnit: (id: string | null) => void;
   selectedCategoryId: ComponentCategory | null;
   selectCategory: (id: ComponentCategory | null) => void;
+  /**
+   * Clears every selection AND signals "re-centre the canvas view" via a
+   * monotonically-increasing `resetViewToken`. Used by the left-sidebar
+   * `Preview Proposal` button so it returns to a clean rack-overview
+   * snapshot — distinct from a plain background-click deselect, which
+   * keeps the current scroll position so the user can pan freely.
+   */
+  resetView: () => void;
+  resetViewToken: number;
 }
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
@@ -49,6 +58,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const [selectedUnitId, setSelectedUnitIdRaw] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] =
     useState<ComponentCategory | null>(null);
+  const [resetViewToken, setResetViewToken] = useState(0);
 
   /* Picking a different rack (or deselecting) must drop the unit selection
    * — otherwise we'd render a "selected" ring on a unit that no longer has
@@ -79,6 +89,17 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     setSelectedCategoryId(id);
   }, []);
 
+  /* Hard reset — clears all four selection axes in a single render AND
+   * bumps `resetViewToken` so views that care (Screen A's rack scroller)
+   * can re-centre. Background clicks deliberately don't call this. */
+  const resetView = useCallback(() => {
+    setSelectedSubsystemId(null);
+    setSelectedRackId(null);
+    setSelectedUnitIdRaw(null);
+    setSelectedCategoryId(null);
+    setResetViewToken((n) => n + 1);
+  }, []);
+
   return (
     <SelectionContext.Provider
       value={{
@@ -90,6 +111,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         selectUnit,
         selectedCategoryId,
         selectCategory,
+        resetView,
+        resetViewToken,
       }}
     >
       {children}

@@ -1,27 +1,13 @@
 import { useMemo, type MouseEvent } from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { hardwareProject } from "./fake-data";
+import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
 import type { Rack as RackType, RackUnit } from "./types";
 import rackFrameUrl from "~/assets/hardware/verstka/Server_BG.png";
-/* Real product photos — one per chassis SKU in the proposal. */
-import productR660 from "~/assets/hardware/products/Dell-PowerEdge-R660.png";
-import productR760 from "~/assets/hardware/products/Dell-PowerEdge-R760.png";
-import productUnity380F from "~/assets/hardware/products/DELL-UNITY-XT-380F.png";
-import productDS6610B from "~/assets/hardware/products/Dell-Connectrix-DS-6610B.png";
-import productS5224F from "~/assets/hardware/products/Dell-EMC-S5224F-ON.png";
-import productN3248 from "~/assets/hardware/products/Dell-EMC-N3248TE-ON.png";
-
-const SERVER_IMAGES: Record<string, string> = {
-  "Dell-PowerEdge-R660.png": productR660,
-  "Dell-PowerEdge-R760.png": productR760,
-  "DELL-UNITY-XT-380F.png": productUnity380F,
-  "Dell-Connectrix-DS-6610B.png": productDS6610B,
-  "Dell-EMC-S5224F-ON.png": productS5224F,
-  "Dell-EMC-N3248TE-ON.png": productN3248,
-};
+/* Shared filename → URL map for every chassis image used by the demo. */
+import { CHASSIS_IMAGE_URLS } from "~/features/hardware/chassis-assets";
 
 /**
  * Aspect ratio + inset constants are derived from the actual `Server_BG.png`
@@ -92,7 +78,7 @@ interface RackProps {
 }
 
 export function Rack({ rack, columnLabel }: RackProps) {
-  const project = hardwareProject;
+  const project = useHardwareProject();
   const {
     selectedRackId,
     selectRack,
@@ -196,9 +182,9 @@ export function Rack({ rack, columnLabel }: RackProps) {
           <span className="max-w-[14rem] text-[15px] font-semibold leading-snug">
             {columnLabel.line1}
           </span>
-          <span className="text-[18px] font-bold leading-none tracking-wide">
+          {/* <span className="text-[18px] font-bold leading-none tracking-wide">
             {columnLabel.line2}
-          </span>
+          </span> */}
         </div>
       ) : null}
 
@@ -230,7 +216,7 @@ export function Rack({ rack, columnLabel }: RackProps) {
           );
           if (!subsystem) return null;
 
-          const image = SERVER_IMAGES[subsystem.chassis.image];
+          const image = CHASSIS_IMAGE_URLS[subsystem.chassis.image];
 
           /* Convert (positionU, sizeU) → CSS top/height percentages of the
            * interior box. A `sizeU`-tall unit anchored at the bottom edge

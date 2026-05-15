@@ -8,9 +8,10 @@ import {
 export default [
   index("routes/index.tsx"),
 
-  // Hardware configurator demo — opens directly, no auth.
+  // Hardware configurator demos — open directly, no auth.
   // See app/docs/features/hardware-configurator/PROGRESS.md.
   route("avaya", "routes/avaya/index.tsx"),
+  route("adgsa-ai", "routes/adgsa-ai/index.tsx"),
 
   layout("./auth/layout.tsx", [
     route("login", "routes/login.tsx"),

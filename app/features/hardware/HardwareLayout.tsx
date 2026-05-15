@@ -12,10 +12,14 @@ import {
   getFakeProject,
   getFakeProjectPrice,
 } from "./adapter";
-import { hardwareProject } from "./fake-data";
+import {
+  HardwareProjectProvider,
+  useHardwareProject,
+} from "./HardwareProjectContext";
 import { SelectionProvider, useSelection } from "./SelectionContext";
 import { SubsystemEditsProvider } from "./SubsystemEditsProvider";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
+import type { HardwareProject } from "./types";
 
 /**
  * Three-column shell for the hardware configurator demo.
@@ -34,39 +38,60 @@ import { useSubsystemEdits } from "./SubsystemEditsContext";
  * `SelectionProvider` wraps the whole shell so subsystem clicks in the
  * nav are pure client state (no route change); children can read it via
  * `useSelection()` to render Screens A/B/C accordingly.
+ *
+ * The `project` prop selects which `HardwareProject` (Avaya, ADGSA-AI,
+ * …) this instance renders. Every feature component below reads it via
+ * `useHardwareProject()` instead of importing a singleton, so adding a
+ * new project is a single new data file + a new route entry.
+ *
+ * `SubsystemEditsProvider` is keyed by `project.id` so that switching
+ * between routes (which never happens without a full unmount today,
+ * but keeping it safe) doesn't bleed renames/deletes across projects.
  */
-export function HardwareLayout({ children }: { children: ReactNode }) {
+export function HardwareLayout({
+  project,
+  children,
+}: {
+  project: HardwareProject;
+  children: ReactNode;
+}) {
   return (
-    <SelectionProvider>
-      <SubsystemEditsProvider>
-        <ComponentEditsProvider>
-          <HardwareLayoutInner>{children}</HardwareLayoutInner>
-        </ComponentEditsProvider>
-      </SubsystemEditsProvider>
-    </SelectionProvider>
+    <HardwareProjectProvider project={project}>
+      <SelectionProvider>
+        <SubsystemEditsProvider key={project.id}>
+          <ComponentEditsProvider>
+            <HardwareLayoutInner>{children}</HardwareLayoutInner>
+          </ComponentEditsProvider>
+        </SubsystemEditsProvider>
+      </SelectionProvider>
+    </HardwareProjectProvider>
   );
 }
 
 function HardwareLayoutInner({ children }: { children: ReactNode }) {
+  const project = useHardwareProject();
   const {
     selectedSubsystemId,
     selectSubsystem,
     selectedUnitId,
     selectUnit,
-    selectRack,
+    resetView,
   } = useSelection();
   const { effectiveSubsystems, isDeleted } = useSubsystemEdits();
-  const project = getFakeProject();
-  const projectPriceData = getFakeProjectPrice();
+  const projectResponse = useMemo(() => getFakeProject(project), [project]);
+  const projectPriceData = useMemo(
+    () => getFakeProjectPrice(project),
+    [project],
+  );
   /* Project the subsystem-edit overlay (renames + deletes) into the nav
    * so the left sidebar reflects renamed labels and skips deleted rows. */
   const editedSubsystems = useMemo(
-    () => effectiveSubsystems(hardwareProject.subsystems),
-    [effectiveSubsystems],
+    () => effectiveSubsystems(project.subsystems),
+    [effectiveSubsystems, project.subsystems],
   );
   const navItems = useMemo(
-    () => getFakeNavItems(selectedSubsystemId, editedSubsystems),
-    [selectedSubsystemId, editedSubsystems],
+    () => getFakeNavItems(selectedSubsystemId, project, editedSubsystems),
+    [selectedSubsystemId, project, editedSubsystems],
   );
 
   /* Stale-selection guard: when a subsystem is deleted while it (or one
@@ -80,21 +105,21 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!selectedUnitId) return;
-    for (const rack of hardwareProject.racks) {
+    for (const rack of project.racks) {
       const unit = rack.units.find((u) => u.id === selectedUnitId);
       if (unit && isDeleted(unit.subsystemId)) {
         selectUnit(null);
         return;
       }
     }
-  }, [selectedUnitId, isDeleted, selectUnit]);
+  }, [selectedUnitId, isDeleted, selectUnit, project.racks]);
 
   return (
     <DiagramProvider>
       <SidebarProvider className="[--header-height:calc(--spacing(14))] overflow-hidden max-h-screen">
         <div className="flex flex-1 h-screen w-full">
           <SidebarLeft
-            project={project}
+            project={projectResponse}
             navItems={navItems}
             projectPriceData={projectPriceData}
             className="h-screen border-r-0 p-4"
@@ -102,13 +127,14 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
             disableHeaderClick
             onPreviewProposalClick={() => {
               /* "Proposal preview" = rack overview: no rack / unit / subsystem
-               * focus — Screen A, carousel at neutral scale. */
-              selectRack(null);
-              selectSubsystem(null);
+               * focus AND the canvas scroller re-centres so the user sees
+               * the full row again (not whatever rack happened to be in
+               * frame from the previous selection). */
+              resetView();
             }}
             priceOverride={{
               label: "Grand Total:",
-              value: formatToUSD(hardwareProject.grandTotalUSD),
+              value: formatToUSD(project.grandTotalUSD),
             }}
             onNavItemSelect={(item) => {
               /* Top-level row (the project) clears the selection. */

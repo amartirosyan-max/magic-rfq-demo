@@ -23,7 +23,8 @@ export type ComponentCategory =
   | "memory"
   | "storage"
   | "network"
-  | "power";
+  | "power"
+  | "gpu";
 
 /** A single row in the chassis component list. */
 export interface HardwareComponent {
@@ -108,6 +109,11 @@ export interface Rack {
   units: RackUnit[];
   /** If true the rack renders as a frame only (no contents, no label) */
   isEmpty: boolean;
+  /**
+   * Two-line title rendered above the rack column on Screen A.
+   * When omitted (e.g. empty flanking racks) no title is drawn.
+   */
+  columnLabel?: { line1: string; line2: string };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -144,6 +150,14 @@ export interface CatalogEntry {
 export interface HardwareProject {
   id: string;
   name: string;
+  /** Short customer label, e.g. "Avaya" or "ADGSA" */
+  clientName: string;
+  /** One-paragraph description for the left-sidebar `ProjectResponse` payload */
+  description: string;
+  /** Industry tag for the `ProjectResponse` payload */
+  industry: string;
+  /** Route path that hosts this project, e.g. "/avaya" or "/adgsa-ai" */
+  routePath: string;
   /** Display string, e.g. "9.6/10" */
   leadScore: string;
   /** Single number shown next to "Grand Total" in the left sidebar */

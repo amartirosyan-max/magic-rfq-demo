@@ -978,6 +978,7 @@ export const componentCatalog: Record<ComponentCategory, CatalogEntry[]> = {
   storage,
   network,
   power,
+  gpu: [],
 };
 
 export const componentCategoryLabel: Record<ComponentCategory, string> = {
@@ -986,11 +987,13 @@ export const componentCategoryLabel: Record<ComponentCategory, string> = {
   storage: "Storage",
   network: "Network",
   power: "Power",
+  gpu: "GPU",
 };
 
 export const componentCategoryOrder: ComponentCategory[] = [
   "cpu",
   "memory",
+  "gpu",
   "storage",
   "network",
   "power",

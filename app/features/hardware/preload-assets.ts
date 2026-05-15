@@ -39,13 +39,20 @@ import gridTilePng from "~/assets/hardware/PNG+SVG/BG_Blue_Grid_Tile_2.png";
 import logoMarkSvg from "~/assets/hardware/verstka/Logo.svg";
 import logoTextSvg from "~/assets/hardware/verstka/Logo_text.svg";
 import rackFramePng from "~/assets/hardware/verstka/Server_BG.png";
-/* Real product photos — one per chassis SKU in the proposal. */
+/* Real product photos — one per chassis SKU shipped across the demo's
+ * two projects (Avaya + ADGSA-AI). Both routes share this manifest so
+ * the first paint of /adgsa-ai doesn't show empty rack frames either. */
 import productR660 from "~/assets/hardware/products/Dell-PowerEdge-R660.png";
 import productR760 from "~/assets/hardware/products/Dell-PowerEdge-R760.png";
 import productUnity380F from "~/assets/hardware/products/DELL-UNITY-XT-380F.png";
 import productDS6610B from "~/assets/hardware/products/Dell-Connectrix-DS-6610B.png";
 import productS5224F from "~/assets/hardware/products/Dell-EMC-S5224F-ON.png";
 import productN3248 from "~/assets/hardware/products/Dell-EMC-N3248TE-ON.png";
+import productXE9680 from "~/assets/hardware/products/PowerEdge-XE9680.png";
+import productF710 from "~/assets/hardware/products/PowerScale-F710.png";
+import productS5232 from "~/assets/hardware/products/PowerSwitch-S5232.png";
+import productSN2201 from "~/assets/hardware/products/Nvidia-SN2201.png";
+import productSN5600 from "~/assets/hardware/products/NVIDIA Spectrum-4 SN5600.png";
 
 import componentCpuVerstka from "~/assets/hardware/verstka/Component_CPU.png";
 import componentHddVerstka from "~/assets/hardware/verstka/Component_HDD.png";
@@ -54,6 +61,7 @@ import componentPowerVerstka from "~/assets/hardware/verstka/Component_Power.png
 import componentRamVerstka from "~/assets/hardware/verstka/Component_RAM.png";
 
 import componentCpuPng from "~/assets/hardware/PNG+SVG/Component_CPU.png";
+import componentGpuPng from "~/assets/hardware/PNG+SVG/Component_GPU.png";
 import componentHddPng from "~/assets/hardware/PNG+SVG/Component_HDD.png";
 import componentNetworkPng from "~/assets/hardware/PNG+SVG/Component_Network.png";
 import componentPowerPng from "~/assets/hardware/PNG+SVG/Component_Power.png";
@@ -74,12 +82,19 @@ const critical: PreloadAsset[] = [
   { href: bgBlueJpg, type: "image/jpeg", priority: "high" },
   { href: gridTilePng, type: "image/png", priority: "high" },
   { href: rackFramePng, type: "image/png", priority: "high" },
+  /* Avaya chassis */
   { href: productR660, type: "image/png", priority: "high" },
   { href: productR760, type: "image/png", priority: "high" },
   { href: productUnity380F, type: "image/png", priority: "high" },
   { href: productDS6610B, type: "image/png", priority: "high" },
   { href: productS5224F, type: "image/png", priority: "high" },
   { href: productN3248, type: "image/png", priority: "high" },
+  /* ADGSA-AI chassis (R660 is shared and already declared above) */
+  { href: productXE9680, type: "image/png", priority: "high" },
+  { href: productF710, type: "image/png", priority: "high" },
+  { href: productS5232, type: "image/png", priority: "high" },
+  { href: productSN2201, type: "image/png", priority: "high" },
+  { href: productSN5600, type: "image/png", priority: "high" },
   { href: logoMarkSvg, type: "image/svg+xml", priority: "high" },
   { href: logoTextSvg, type: "image/svg+xml", priority: "high" },
 ];
@@ -96,6 +111,8 @@ const deferred: PreloadAsset[] = [
   { href: componentHddPng, type: "image/png", priority: "auto" },
   { href: componentNetworkPng, type: "image/png", priority: "auto" },
   { href: componentPowerPng, type: "image/png", priority: "auto" },
+  /* GPU category icon (used by the XE9680 component list on /adgsa-ai) */
+  { href: componentGpuPng, type: "image/png", priority: "auto" },
 ];
 
 /**

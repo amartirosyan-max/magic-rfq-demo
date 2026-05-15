@@ -1,14 +1,19 @@
 /**
  * Hardware demo — adapters.
  *
- * Translates the hardware-feature data tree (`fake-data.ts`) into the shapes
- * the existing `~/components/sidebar-left.tsx` / `~/components/sidebar-right.tsx`
- * components already expect. The goal is to REUSE those components as-is and
- * only feed them fake values, not to build parallel sidebar UIs.
+ * Translates a `HardwareProject` value into the shapes the existing
+ * `~/components/sidebar-left.tsx` / `~/components/sidebar-right.tsx`
+ * components already expect. The goal is to REUSE those components
+ * as-is and only feed them fake values, not to build parallel
+ * sidebar UIs.
  *
- *  - `getFakeProject()`        → ProjectResponse (left-sidebar header)
- *  - `getFakeProjectPrice()`   → IProjectPriceResponse (left-sidebar price)
- *  - `getFakeNavItems()`       → NavItem[] for `<NavMain>`
+ *  - `getFakeProject(project)`        → ProjectResponse (left-sidebar header)
+ *  - `getFakeProjectPrice(project)`   → IProjectPriceResponse (left-sidebar price)
+ *  - `getFakeNavItems(selectedId, project, subsystems?)` → NavItem[] for `<NavMain>`
+ *
+ * Functions are plain (not hooks) so they're safe to call from
+ * `useMemo` / inside other hooks. Each route's `HardwareLayout` reads
+ * its project from `HardwareProjectContext` and threads it through.
  */
 
 import type { IProjectPriceResponse } from "~/api/billing";
@@ -18,20 +23,18 @@ import {
   SystemGenerationStatus,
 } from "~/types/project";
 import type { NavItem } from "~/types/navigation";
-import { hardwareProject } from "./fake-data";
-import type { Subsystem } from "./types";
+import type { HardwareProject, Subsystem } from "./types";
 
 const FAKE_PROJECT_ID = 1001;
 
 /** Minimal `ProjectResponse` strong-typed for the left sidebar. */
-export function getFakeProject(): ProjectResponse {
+export function getFakeProject(project: HardwareProject): ProjectResponse {
   return {
     id: FAKE_PROJECT_ID,
-    name: hardwareProject.name,
-    client_name: "Avaya",
-    description:
-      "Avaya POD Cluster — IPO200. Two-rack Hyper-V + VMware infrastructure.",
-    industry: "Telecom",
+    name: project.name,
+    client_name: project.clientName,
+    description: project.description,
+    industry: project.industry,
     budget_estimation: null,
     timeline: null,
     submission_deadline: null,
@@ -47,7 +50,7 @@ export function getFakeProject(): ProjectResponse {
     user_location: null,
     user_name: null,
     /* Must be > 2.0 so the left sidebar doesn't redirect to /lead-score */
-    lead_score: hardwareProject.leadScore,
+    lead_score: project.leadScore,
     proposal_confidence: 0.92,
     questionnaire_completion: 1,
   };
@@ -55,18 +58,20 @@ export function getFakeProject(): ProjectResponse {
 
 /** Fake price for the sidebar header. We render a single "Grand Total" so we
  *  collapse the min/max range to the same number. */
-export function getFakeProjectPrice(): IProjectPriceResponse {
+export function getFakeProjectPrice(
+  project: HardwareProject,
+): IProjectPriceResponse {
   return {
     id: FAKE_PROJECT_ID,
-    name: hardwareProject.name,
+    name: project.name,
     description: "Grand Total",
-    price: String(hardwareProject.grandTotalUSD),
-    price_max: String(hardwareProject.grandTotalUSD),
+    price: String(project.grandTotalUSD),
+    price_max: String(project.grandTotalUSD),
   };
 }
 
 /**
- * Build the left-sidebar nav from `hardwareProject.subsystems`.
+ * Build the left-sidebar nav from `project.subsystems`.
  *
  * Top-level row = the project itself; each subsystem is nested under it.
  * `selectedSubsystemId` controls which sub-item renders with the "selected"
@@ -79,21 +84,22 @@ export function getFakeProjectPrice(): IProjectPriceResponse {
  * `onItemSelect` on `<NavMain>`, so they never actually navigate.
  */
 export function getFakeNavItems(
-  selectedSubsystemId: string | null = null,
-  subsystems: Subsystem[] = hardwareProject.subsystems,
+  selectedSubsystemId: string | null,
+  project: HardwareProject,
+  subsystems: Subsystem[] = project.subsystems,
 ): NavItem[] {
   return [
     {
-      title: hardwareProject.name,
-      url: "/avaya",
+      title: project.name,
+      url: project.routePath,
       isActive: true,
-      /* Project row stays highlighted while we're in the Avaya demo. */
+      /* Project row stays highlighted while we're inside this demo. */
       isSelected: true,
       hr_uid: null,
       category: "infrastructure",
       items: subsystems.map((s) => ({
         title: s.name,
-        url: `/avaya#${s.id}`,
+        url: `${project.routePath}#${s.id}`,
         isActive: false,
         isSelected: s.id === selectedSubsystemId,
         hr_uid: s.id,
