@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useHardwareProject } from "./HardwareProjectContext";
 import { Rack } from "./Rack";
@@ -21,10 +15,8 @@ import { useSelection } from "./SelectionContext";
  * The 50% resolves against the row's containing block (the canvas), so
  * at scrollLeft = 0 the first rack's centre lands exactly on the canvas
  * centre, and at scrollLeft = max the last rack's centre does too —
- * *and no further*.  Anything bigger (e.g. the previous `px-[50%]`)
- * lets the user scroll past the centre point, which is what the user
- * called "scrolls too much".  `max(0px, …)` clamps the pad away from
- * negative values on very narrow canvases.
+ * *and no further*.  `max(0px, …)` clamps away from negative values on
+ * very narrow canvases.
  */
 const SCROLL_PAD = "max(0px, calc(50% - 10.3125vh - 20px))";
 
@@ -34,22 +26,30 @@ const SCROLL_PAD = "max(0px, calc(50% - 10.3125vh - 20px))";
  * Two layout modes, selected automatically based on whether the racks
  * fit the canvas:
  *
- *   - **Fits** (e.g. Avaya — 2 real racks once the decorative empty
- *     flanks are filtered out).  No scroll-pad, `mx-auto` centres the
- *     row, and the framer-motion `translate-x` animation slides the
- *     selected rack to canvas centre — the same behaviour the demo had
- *     before the multi-project refactor.
+ *   - **Fits** (e.g. Avaya — 2 real racks + 2 decorative empty flanks
+ *     for a 4-column composition).  No scroll-pad, `mx-auto` centres
+ *     the row, and the framer-motion `translate-x` animation slides
+ *     the selected rack to canvas centre — same behaviour the demo
+ *     had before the multi-project refactor.
  *
  *   - **Overflows** (e.g. ADGSA-AI — 5 racks).  The row gets a
- *     `SCROLL_PAD` of `50% − half-rack-slot` on each side, so the user
- *     can horizontally pan from "first rack at canvas centre" to "last
- *     rack at canvas centre" — and not a pixel further.  Selecting a
- *     rack smooth-scrolls it to centre via `scrollIntoView`; the
- *     transform animation is disabled in this mode to avoid two
- *     centring mechanisms fighting each other.
+ *     `SCROLL_PAD` of `50% − half-rack-slot` on each side, so the
+ *     user can horizontally pan from "first rack at canvas centre"
+ *     to "last rack at canvas centre" — and not a pixel further.
+ *     Selecting a rack smooth-scrolls it to centre via
+ *     `scrollIntoView`; the transform animation is disabled in this
+ *     mode so the two centring mechanisms don't fight.
  *
- * Clicking the canvas background still clears the selection but leaves
- * the user's manual scroll position alone, so they can keep panning.
+ * Centring rules:
+ *   - On mount / project change → row midpoint sits under the pill.
+ *   - While racks are still settling (e.g. images decoding change
+ *     the row's scrollWidth), keep re-snapping IFF the user hasn't
+ *     manually scrolled or picked a rack yet.
+ *   - `Preview Proposal` and nav-row clicks call `resetView()` →
+ *     `resetViewToken` bumps → smooth re-snap to the midpoint, even
+ *     if the user had previously panned.
+ *   - Plain background-click deselect leaves the scroll position
+ *     alone so the user can keep panning.
  */
 export function ScreenA() {
   const project = useHardwareProject();
@@ -58,21 +58,47 @@ export function ScreenA() {
   const rowRef = useRef<HTMLDivElement>(null);
   const rackRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [overflow, setOverflow] = useState(false);
-  const didInitialCentre = useRef(false);
 
-  /* Empty decorative racks were a workaround for the old `justify-
-   * center` layout; with scroll-based centring they're vestigial.
-   * Filtering them here only — `project.racks` stays unchanged so
-   * `CarouselControl` and the deletion guards in `HardwareLayout`
-   * keep working without modification. */
-  const racks = useMemo(
-    () => project.racks.filter((r) => !r.isEmpty),
-    [project.racks],
-  );
+  /* `true` once the user actively interacts with the canvas — either by
+   * scrolling manually or by selecting a rack.  After that we stop
+   * auto-snapping to the midpoint on width changes so we don't fight
+   * the user's intent. `resetView()` flips it back to `false`. */
+  const userTookOverRef = useRef(false);
+  /* The last scrollLeft value we set programmatically; used to ignore
+   * the scroll event our own .scrollTo() triggers. */
+  const programmaticTargetRef = useRef<number | null>(null);
 
-  /* Measure whether the racks (excluding our own conditional padding)
-   * are wider than the canvas.  Re-runs on viewport resize via a
-   * ResizeObserver on the canvas wrapper. */
+  /* Render the racks as-is — empty decorative flanks (Avaya) included.
+   * They were a deliberate composition tool in the original Avaya
+   * demo (frame-only racks on either side of the two real ones), and
+   * the new overflow path handles them transparently since they take
+   * the same slot width as real racks. */
+  const racks = project.racks;
+
+  /* Snap the scroller so the row's midpoint sits under the canvas
+   * centre.  No-op when the row is narrower than the canvas (FITS
+   * mode handles centring via `mx-auto`).  `smooth` is true for
+   * user-visible recentres (resetView), false for synchronous
+   * pre-paint positioning on mount.  Returns the target it applied
+   * (or `null` if it bailed). */
+  const snapToCentre = (smooth: boolean): number | null => {
+    const el = scrollRef.current;
+    if (!el) return null;
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 0) return null;
+    const target = max / 2;
+    programmaticTargetRef.current = target;
+    if (smooth) {
+      el.scrollTo({ left: target, behavior: "smooth" });
+    } else {
+      el.scrollLeft = target;
+    }
+    return target;
+  };
+
+  /* Measure overflow.  We watch BOTH the canvas wrapper (viewport
+   * resize) and the row itself (rack width changes, e.g. images
+   * decoding) so the FITS ↔ OVERFLOW switch tracks reality. */
   useLayoutEffect(() => {
     const outer = scrollRef.current;
     const row = rowRef.current;
@@ -93,22 +119,44 @@ export function ScreenA() {
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(outer);
+    ro.observe(row);
     return () => ro.disconnect();
   }, [racks]);
 
-  /* Initial centring (once, after overflow has been determined).  We
-   * land at the middle of the scroll range so the visual centre of the
-   * project sits under the carousel pill, matching the previous
-   * `justify-center` default. */
+  /* Initial centring — fires synchronously before paint so the user
+   * never sees a flash of "scrolled-to-left" racks.  Re-runs while
+   * scrollWidth keeps changing (images decoding, fonts loading) for
+   * as long as the user hasn't taken over. */
   useLayoutEffect(() => {
-    if (didInitialCentre.current) return;
+    if (userTookOverRef.current) return;
+    snapToCentre(false);
+  }, [overflow, racks, project.id]);
+
+  /* Detect user-driven scroll.  Compare against our own last
+   * programmatic target so .scrollTo() doesn't get misattributed.
+   * Once the user pans, stop auto-snapping until `resetView()` is
+   * called. */
+  useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    if (max <= 0) return;
-    el.scrollLeft = max / 2;
-    didInitialCentre.current = true;
-  }, [overflow]);
+    const onScroll = () => {
+      const expected = programmaticTargetRef.current;
+      if (expected !== null && Math.abs(el.scrollLeft - expected) < 2) {
+        programmaticTargetRef.current = null;
+        return;
+      }
+      userTookOverRef.current = true;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* Selecting a rack counts as taking over — we'll route to it via
+   * scrollIntoView (OVERFLOW) or translate-x (FITS) and skip the
+   * auto-snap pass on subsequent width changes. */
+  useEffect(() => {
+    if (selectedRackId) userTookOverRef.current = true;
+  }, [selectedRackId]);
 
   /* Translate-x amount for the FITS mode.  In OVERFLOW mode we leave
    * the row untransformed (x = 0) and rely on scrollIntoView for
@@ -126,29 +174,36 @@ export function ScreenA() {
   useEffect(() => {
     if (!overflow || !selectedRackId) return;
     const target = rackRefs.current[selectedRackId];
-    target?.scrollIntoView({
+    if (!target) return;
+    /* scrollIntoView issues its own scroll programmatically; record
+     * the eventual scrollLeft so our scroll listener doesn't mistake
+     * it for a user pan.  Compute the destination the same way
+     * `inline: "center"` does so we can match it ±2 px. */
+    const el = scrollRef.current;
+    if (el) {
+      const elRect = el.getBoundingClientRect();
+      const tRect = target.getBoundingClientRect();
+      const delta =
+        tRect.left - elRect.left + tRect.width / 2 - elRect.width / 2;
+      programmaticTargetRef.current = el.scrollLeft + delta;
+    }
+    target.scrollIntoView({
       inline: "center",
       block: "nearest",
       behavior: "smooth",
     });
   }, [overflow, selectedRackId]);
 
-  /* `Preview Proposal` → `resetView()` bumps `resetViewToken`.  In FITS
-   * mode the row is already perfectly centred by `mx-auto` + the
-   * cleared `selectedRackId` (translate-x = 0); we only need to act in
-   * OVERFLOW mode, where the user could have scrolled the previous
-   * selection to centre and we want to snap back to "row midpoint =
-   * canvas centre" — i.e. the same vantage point as initial mount.
-   * Skip the first invocation (token === 0) so we don't fight the
-   * initial-centring effect above. */
+  /* `Preview Proposal` / project-row clicks → `resetView()` bumps
+   * `resetViewToken`.  Treat it as a hard "start over": clear the
+   * user-took-over flag and re-snap the OVERFLOW scroller back to
+   * the midpoint.  FITS mode is already perfectly centred by
+   * `mx-auto` + the cleared `selectedRackId`. */
   useEffect(() => {
     if (resetViewToken === 0) return;
+    userTookOverRef.current = false;
     if (!overflow) return;
-    const el = scrollRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    if (max <= 0) return;
-    el.scrollTo({ left: max / 2, behavior: "smooth" });
+    snapToCentre(true);
   }, [resetViewToken, overflow]);
 
   const hasSelection = selectedRackId !== null;
