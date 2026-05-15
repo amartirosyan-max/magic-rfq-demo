@@ -134,7 +134,7 @@ export function ScreenC({ subsystem }: ScreenCProps) {
   return (
     <motion.div
       key={`screen-c-${subsystem.id}`}
-      className="relative z-0 flex flex-1 flex-col gap-4 px-12 pb-12 pt-32"
+      className="relative z-0 flex h-full min-h-0 flex-1 flex-col px-6 pb-6 pt-40 sm:px-8 lg:px-12 lg:pb-8 lg:pt-42"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -142,38 +142,39 @@ export function ScreenC({ subsystem }: ScreenCProps) {
     >
 
       {/* === Cards + chassis hero =================================
-          The whole stack is vertically centred in the remaining
-          space below the title (the title hugs the top, this block
-          fills the rest with `flex-1` + `justify-center`).
-          Cards animate IN from below the hero with staggered
-          delays — reading as "popping out" of the chassis. */}
-      <div className="flex flex-1 flex-col justify-center gap-4">
+          The title stays below the floating chrome. The cards + chassis form
+          one centred stack while they fit; when they don't, only the cards
+          list shrinks into a scroll region and the chassis stays visible at
+          the bottom of the available canvas. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
         {/* === Page title ========================================= */}
+        <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-hidden lg:gap-4">
         <PageTitle subsystem={subsystem} />
-        
-        <div className="flex flex-col gap-2.5 overflow-y-auto px-28 py-2">
-          {editedComponents.length === 0 ? (
-            <EmptyState />
-          ) : (
-            editedComponents.map((component, idx) => (
-              <ComponentCard
-                key={component.id}
-                component={component}
-                index={idx}
-                selected={selectedCategoryId === component.category}
-                onSelect={() => handlePickCategory(component.category)}
-              />
-            ))
-          )}
-        </div>
 
-        {/* === Chassis hero ====================================== */}
-        <ChassisHero
-          subsystem={subsystem}
-          chassisImg={chassisImg}
-          selected={selectedCategoryId === null}
-          onSelect={handlePickChassis}
-        />
+          <div className="flex min-h-0 max-h-full shrink flex-col gap-2.5 overflow-y-auto overscroll-contain px-0 py-2 sm:px-8 xl:px-28">
+            {editedComponents.length === 0 ? (
+              <EmptyState />
+            ) : (
+              editedComponents.map((component, idx) => (
+                <ComponentCard
+                  key={component.id}
+                  component={component}
+                  index={idx}
+                  selected={selectedCategoryId === component.category}
+                  onSelect={() => handlePickCategory(component.category)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* === Chassis hero ====================================== */}
+          <ChassisHero
+            subsystem={subsystem}
+            chassisImg={chassisImg}
+            selected={selectedCategoryId === null}
+            onSelect={handlePickChassis}
+          />
+        </div>
       </div>
     </motion.div>
   );
@@ -224,13 +225,6 @@ function ComponentCard({
    * Catalog into the SKU list for this category. The hint pill on the
    * right ("Edit in catalog →") makes the affordance discoverable. */
   const enterFromY = 520;
-  /* Gate the hover/tap micro-interactions behind the entry spring. If
-   * the user's cursor happens to be where the card lands, `whileHover`
-   * would otherwise kick in mid-flight and visually fight the spring
-   * (the card jitters / never fully settles). We flip this to true the
-   * moment the entry animation completes. */
-  const [entered, setEntered] = useState(false);
-
   return (
     <motion.div
       role="button"
@@ -246,9 +240,6 @@ function ComponentCard({
       initial={{ y: enterFromY, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: enterFromY, opacity: 0 }}
-      onAnimationComplete={() => setEntered(true)}
-      whileHover={entered ? { y: -1 } : undefined}
-      whileTap={entered ? { scale: 0.99 } : undefined}
       transition={{
         type: "spring",
         stiffness: 220,
@@ -275,10 +266,12 @@ function ComponentCard({
       {/* White card: static qty pill + divider + title/description. */}
       <div
         className={cn(
-          "relative flex min-h-[62px] flex-1 items-center rounded-[5px] px-2.5 py-2.5 transition-[box-shadow,transform,background-color,border-color] duration-150",
+          "relative flex min-h-[62px] flex-1 items-center rounded-[5px] bg-white px-2.5 py-2.5",
+          "shadow-[0_1px_2px_rgba(15,23,42,0.06),0_3px_10px_rgba(15,23,42,0.08)]",
+          "ring-2 ring-inset transition-[box-shadow,background-color] duration-150",
           selected
-            ? "bg-white ring-2 ring-[#70CDFF] shadow-[0_2px_4px_rgba(15,23,42,0.10),0_10px_24px_rgba(112,205,255,0.45)]"
-            : "bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06),0_3px_10px_rgba(15,23,42,0.08)] group-hover:shadow-[0_2px_4px_rgba(15,23,42,0.10),0_6px_18px_rgba(15,23,42,0.14)]",
+            ? "ring-[#70CDFF]"
+            : "ring-transparent group-hover:shadow-[0_2px_4px_rgba(15,23,42,0.10),0_6px_18px_rgba(15,23,42,0.14)]",
         )}
       >
         {/* Static count pill — qty edits live in the Catalog. Size matches
@@ -363,11 +356,6 @@ function ChassisHero({
   /* Computed inline so the chassis data stays the source of truth — no
    * stale numbers to keep in sync when we tweak `watts`. */
   const btu = watts ? Math.round(watts * 3.412 * 10) / 10 : undefined;
-  /* Hover/tap micro-interactions only after the entry spring lands —
-   * otherwise an already-hovered cursor pulls the card while it's
-   * still flying in. */
-  const [entered, setEntered] = useState(false);
-
   return (
     <motion.div
       role="button"
@@ -383,12 +371,14 @@ function ChassisHero({
       initial={{ y: 220, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 220, opacity: 0 }}
-      onAnimationComplete={() => setEntered(true)}
-      whileHover={entered ? { y: -1 } : undefined}
-      whileTap={entered ? { scale: 0.995 } : undefined}
       transition={{ type: "spring", stiffness: 220, damping: 28 }}
       className={cn(
-        "flex shrink-0 cursor-pointer items-start gap-5 rounded-md text-left",
+        "flex w-full shrink-0 cursor-pointer items-start gap-5 rounded-md text-left",
+        /* The canvas becomes narrow before the whole viewport is "mobile"
+         * because both sidebars stay visible. Stack the chassis media/card
+         * at this breakpoint so the description card keeps readable width
+         * and the hero becomes shorter instead of one very tall side card. */
+        "max-[1200px]:flex-col max-[1200px]:items-center max-[1200px]:gap-2",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#70CDFF]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
       )}
     >
@@ -400,7 +390,7 @@ function ChassisHero({
           src={chassisImg}
           alt={subsystem.chassis.name}
           draggable={false}
-          className="h-auto w-[300px] shrink-0 object-contain drop-shadow-lg"
+          className="h-auto w-[clamp(180px,28vw,300px)] shrink-0 object-contain drop-shadow-lg max-[1200px]:w-[min(260px,72%)]"
         />
       ) : null}
 
@@ -408,10 +398,13 @@ function ChassisHero({
           power/heat badges at the bottom. */}
       <div
         className={cn(
-          "flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-white/95 px-5 py-4 transition-[box-shadow,border-color] duration-150",
+          "mx-2 flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-white/95 px-5 py-4",
+          "shadow-[0_1px_2px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.10)]",
+          "ring-2 ring-inset transition-colors duration-150",
+          "max-[1200px]:w-full max-[1200px]:max-w-[420px] max-[1200px]:flex-none max-[1200px]:px-4 max-[1200px]:py-3",
           selected
-            ? "ring-2 ring-[#70CDFF] shadow-[0_2px_6px_rgba(15,23,42,0.10),0_14px_28px_rgba(112,205,255,0.50)]"
-            : "ring-1 ring-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.10)] hover:ring-slate-300",
+            ? "ring-[#70CDFF]"
+            : "ring-slate-200/80 hover:ring-slate-300",
         )}
       >
         <h2 className="text-[16px] font-semibold leading-tight text-slate-900">

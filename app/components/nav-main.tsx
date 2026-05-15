@@ -46,7 +46,7 @@ function NavMenuItem({
 }) {
   const hasChildren = item.items.length > 0;
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleItemClick = (e: React.MouseEvent) => {
     if (onItemSelect) {
       e.preventDefault();
       onItemSelect(item);
@@ -59,18 +59,22 @@ function NavMenuItem({
       defaultOpen={item.isActive}
       className="group/collapsible"
     >
-      <SidebarMenuItem>
+      <SidebarMenuItem className="w-full">
         <div
-          className={`flex items-center gap-2 rounded-sm px-2.5 border border-[var(--active-tab)] ${
+          className={`flex w-full min-w-0 items-center gap-2 rounded-none px-2.5 border border-[var(--active-tab)] ${
             item.isSelected
               ? "bg-[var(--active-tab)] text-white hover:bg-[var(--active-tab)] hover:text-white"
               : level === 1
-                ? "bg-[var(--chat-background)] hover:bg-[#b1c9ef] active:bg-sidebar-accent active:text-sidebar-accent-foreground"
-                : "bg-white hover:bg-gray-100 active:bg-sidebar-accent active:text-sidebar-accent-foreground"
+                ? "bg-[var(--chat-background)] hover:bg-[#b1c9ef]"
+                : "bg-white hover:bg-gray-100"
           }`}
         >
-          <SidebarMenuButton asChild>
-            <Link to={item.url} tabIndex={0} onClick={handleClick}>
+          <SidebarMenuButton
+            asChild
+            className="min-h-0 min-w-0 shrink flex-1 bg-transparent text-inherit shadow-none ring-0 hover:bg-transparent hover:text-inherit active:bg-transparent active:text-inherit data-[active=true]:bg-transparent data-[active=true]:text-inherit data-[state=open]:hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+            onClick={handleItemClick}
+          >
+            <Link to={item.url} tabIndex={0}>
               {item.icon && <item.icon />}
               <span>{item.title}</span>
             </Link>
@@ -82,8 +86,8 @@ function NavMenuItem({
           )}
         </div>
         {hasChildren && (
-          <CollapsibleContent>
-            <SidebarMenuSub>
+          <CollapsibleContent className="w-full min-w-0">
+            <SidebarMenuSub className="w-full min-w-0 translate-x-0 border-0 pl-0 pr-0">
               {item.items.map((subItem) => (
                 <SidebarMenuSubItem key={subItem.title}>
                   {subItem.items.length > 0 ? (
@@ -95,17 +99,15 @@ function NavMenuItem({
                   ) : (
                     <SidebarMenuSubButton
                       asChild
-                      className={`rounded-sm ${subItem.isSelected ? "bg-[var(--active-tab)] text-white hover:bg-[var(--active-tab)] hover:text-white" : ""}`}
+                      className={`w-full min-w-0 translate-x-0 rounded-none hover:text-inherit active:bg-transparent active:text-inherit data-[active=true]:bg-transparent data-[active=true]:text-inherit ${subItem.isSelected ? "border-[var(--active-tab)] bg-[var(--active-tab)] text-white hover:bg-[var(--active-tab)] hover:text-white active:bg-[var(--active-tab)] active:text-white" : "active:bg-gray-100"}`}
+                      onClick={(e) => {
+                        if (onItemSelect) {
+                          e.preventDefault();
+                          onItemSelect(subItem);
+                        }
+                      }}
                     >
-                      <Link
-                        to={subItem.url}
-                        onClick={(e) => {
-                          if (onItemSelect) {
-                            e.preventDefault();
-                            onItemSelect(subItem);
-                          }
-                        }}
-                      >
+                      <Link to={subItem.url}>
                         <span>{subItem.title}</span>
                       </Link>
                     </SidebarMenuSubButton>
@@ -133,8 +135,8 @@ export function NavMain({
   onItemSelect?: OnItemSelect;
 }) {
   return (
-    <SidebarGroup className="text-primary">
-      <SidebarMenu>
+    <SidebarGroup className="text-primary p-0">
+      <SidebarMenu className="w-full">
         {items.map((item) => (
           <NavMenuItem
             key={item.title}

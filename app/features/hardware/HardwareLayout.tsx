@@ -26,6 +26,11 @@ import { useSubsystemEdits } from "./SubsystemEditsContext";
  * the hardware subsystem-category list; the chat body is a friendly
  * placeholder for the demo.
  *
+ * The left header keeps `Preview Proposal`; in this demo it resets the
+ * canvas to the multi-rack overview (no rack / unit / subsystem selection)
+ * instead of opening the project proposal tab. Header click-to-project
+ * remains disabled via `disableHeaderClick`.
+ *
  * `SelectionProvider` wraps the whole shell so subsystem clicks in the
  * nav are pure client state (no route change); children can read it via
  * `useSelection()` to render Screens A/B/C accordingly.
@@ -48,6 +53,7 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
     selectSubsystem,
     selectedUnitId,
     selectUnit,
+    selectRack,
   } = useSelection();
   const { effectiveSubsystems, isDeleted } = useSubsystemEdits();
   const project = getFakeProject();
@@ -94,7 +100,12 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
             className="h-screen border-r-0 p-4"
             topSlot={<HardwareLogo />}
             disableHeaderClick
-            hidePrimaryAction
+            onPreviewProposalClick={() => {
+              /* "Proposal preview" = rack overview: no rack / unit / subsystem
+               * focus — Screen A, carousel at neutral scale. */
+              selectRack(null);
+              selectSubsystem(null);
+            }}
             priceOverride={{
               label: "Grand Total:",
               value: formatToUSD(hardwareProject.grandTotalUSD),
