@@ -463,7 +463,7 @@ function SubsystemEditCard({ subsystem }: { subsystem: Subsystem }) {
   };
 
   return (
-    <article className="rounded-md border bg-white px-4 py-3 ring-1 ring-[#3744a6]/30">
+    <article className="border bg-white px-4 py-3 ring-1 ring-[#3744a6]/30">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         Edit subsystem
       </p>
@@ -849,7 +849,7 @@ function InstalledComponentCard({
   return (
     <article
       className={cn(
-        "rounded-md border bg-white px-4 py-3 transition-colors",
+        "border bg-white px-4 py-3 transition-colors",
         deleted
           ? "border-slate-200 ring-1 ring-slate-100 opacity-75"
           : "bg-white ring-1 ring-[#3744a6]/30",

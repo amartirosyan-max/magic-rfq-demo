@@ -8,8 +8,9 @@ import { useSelection } from "./SelectionContext";
  * Screen A — multi-rack overview (carousel body only).
  *
  * The section wrapper, blueprint-grid background and `TopChrome` overlay
- * live in `HardwareCanvas.tsx`. This component is responsible for the
- * 4-rack row and its interactions:
+ * (which owns the breadcrumb, Design tabs and rack-carousel pill) live in
+ * `HardwareCanvas.tsx` / `TopChrome.tsx`. This component is responsible
+ * for the 4-rack row only and its interactions:
  *   - row translation so the selected rack centres on the canvas
  *   - canvas-backdrop click → deselect rack
  *
@@ -58,17 +59,31 @@ export function ScreenA() {
       }}
       className="relative flex flex-1 items-center justify-center overflow-hidden px-12 pb-12 pt-28"
     >
+      {/* IMPORTANT — equal-width rack slots.
+       *
+       * The carousel pill above is centred on the canvas chrome.  For the
+       * pill to sit exactly above the FOCUSED rack, the row's translate
+       * percentage has to map cleanly to a per-rack shift.  With `gap-10`
+       * the gaps are counted as part of the row width but not as part of
+       * the per-rack stride — so `((centreIdx - i) * 100) / n` left the
+       * focused rack a few pixels short of centre.
+       *
+       * Replacing the gap with symmetric `mx-5` on every rack makes each
+       * rack live in an equal-width slot (`rackWidth + 40 px`), so the
+       * formula now lands the focused rack at the exact row centre, and
+       * the centred carousel sits exactly above it. */}
       <motion.div
-        className="flex h-[55vh] items-end justify-center gap-10"
+        className="flex h-[55vh] items-end justify-center"
         animate={{ x: `${rowOffsetPercent}%` }}
         transition={{ type: "spring", stiffness: 220, damping: 26 }}
       >
         {hardwareProject.racks.map((rack, idx) => (
-          <Rack
-            key={rack.id}
-            rack={rack}
-            columnLabel={rack.isEmpty ? undefined : labelFor(idx)}
-          />
+          <div key={rack.id} className="flex h-full items-end mx-5">
+            <Rack
+              rack={rack}
+              columnLabel={rack.isEmpty ? undefined : labelFor(idx)}
+            />
+          </div>
         ))}
       </motion.div>
     </motion.div>

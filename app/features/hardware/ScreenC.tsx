@@ -250,7 +250,7 @@ function ComponentCard({
         delay: 0.18 + index * 0.07,
       }}
       className={cn(
-        "group flex w-full cursor-pointer items-stretch gap-3 rounded-[6px] text-left",
+        "group flex w-full cursor-pointer items-stretch gap-3 text-left",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#70CDFF]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
       )}
     >
@@ -266,7 +266,7 @@ function ComponentCard({
       {/* White card: static qty pill + divider + title/description. */}
       <div
         className={cn(
-          "relative flex min-h-[62px] flex-1 items-center rounded-[5px] bg-white px-2.5 py-2.5",
+          "relative flex min-h-[62px] flex-1 items-center bg-white px-2.5 py-2.5",
           "shadow-[0_1px_2px_rgba(15,23,42,0.06),0_3px_10px_rgba(15,23,42,0.08)]",
           "ring-2 ring-inset transition-[box-shadow,background-color] duration-150",
           selected
@@ -373,7 +373,7 @@ function ChassisHero({
       exit={{ y: 220, opacity: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 28 }}
       className={cn(
-        "flex w-full shrink-0 cursor-pointer items-start gap-5 rounded-md text-left",
+        "flex w-full shrink-0 cursor-pointer items-start gap-5 text-left",
         /* The canvas becomes narrow before the whole viewport is "mobile"
          * because both sidebars stay visible. Stack the chassis media/card
          * at this breakpoint so the description card keeps readable width
@@ -398,7 +398,7 @@ function ChassisHero({
           power/heat badges at the bottom. */}
       <div
         className={cn(
-          "mx-2 flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-white/95 px-5 py-4",
+          "mx-2 flex min-w-0 flex-1 flex-col gap-2 bg-white/95 px-5 py-4",
           "shadow-[0_1px_2px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.10)]",
           "ring-2 ring-inset transition-colors duration-150",
           "max-[1200px]:w-full max-[1200px]:max-w-[420px] max-[1200px]:flex-none max-[1200px]:px-4 max-[1200px]:py-3",
@@ -462,7 +462,7 @@ function EmptyState() {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 240, opacity: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 26, delay: 0.18 }}
-      className="rounded-md bg-white/90 px-5 py-6 text-center text-[13px] text-slate-500 ring-1 ring-slate-200"
+      className="bg-white/90 px-5 py-6 text-center text-[13px] text-slate-500 ring-1 ring-slate-200"
     >
       No serviceable parts in this proposal — switches are sold as a single
       unit.

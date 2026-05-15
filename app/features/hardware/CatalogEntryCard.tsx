@@ -65,7 +65,7 @@ export function CatalogEntryCard({
       whileHover={onClick ? { y: -1 } : undefined}
       className={cn(
         "relative px-4 py-4 transition-colors",
-        "rounded-md bg-white",
+        "bg-white",
         // !bare &&
         //   inProposal &&
         //   "rounded-xl border border-[#3744a6]/60 bg-[#3744a6]/[0.05] ring-1 ring-[#3744a6]/30",
