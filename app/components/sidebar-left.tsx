@@ -59,6 +59,11 @@ interface ISidebarLeftProps extends React.ComponentProps<typeof Sidebar> {
    */
   hidePrimaryAction?: boolean;
   /**
+   * When set, `Preview Proposal` calls this instead of navigating to the
+   * project proposal tab (e.g. hardware demo: reset canvas to overview).
+   */
+  onPreviewProposalClick?: () => void;
+  /**
    * When provided, replaces the "Price range: $min - $max" block with a
    * single labelled value (e.g. `{ label: "Grand Total:", value: "$644,475" }`).
    * Useful for demos that surface a single number instead of a range.
@@ -80,6 +85,7 @@ export function SidebarLeft({
   topSlot,
   disableHeaderClick = false,
   hidePrimaryAction = false,
+  onPreviewProposalClick,
   priceOverride,
   onNavItemSelect,
   ...props
@@ -110,11 +116,14 @@ export function SidebarLeft({
 
   return (
     <Sidebar className={cn("border-r-0", className)} {...props}>
-      <SidebarHeader>
+      {/* `pr-[7px]` matches `SidebarContent`'s `scrollbar-w-[7px]` so the project
+       *  card and nav rows share the same content width (scrollbar no longer
+       *  makes the list ~7px narrower than the header). */}
+      <SidebarHeader className="shrink-0 pr-[7px]">
         {topSlot}
         <div
           className={cn(
-            "bg-[#c2eaff] flex flex-col items-center justify-center gap-2.5 rounded-md p-4",
+            "bg-[#dce7f8] flex flex-col items-center justify-center gap-2.5 rounded-md p-4",
             !disableHeaderClick && "cursor-pointer",
           )}
           onClick={
@@ -242,7 +251,11 @@ export function SidebarLeft({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      navigate(`/projects/${project?.id}?tab=proposal`);
+                      if (onPreviewProposalClick) {
+                        onPreviewProposalClick();
+                      } else {
+                        navigate(`/projects/${project?.id}?tab=proposal`);
+                      }
                     }}
                   >
                     Preview Proposal
@@ -263,7 +276,7 @@ export function SidebarLeft({
           )}
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="mt-2.5 min-h-0">
         {/*<NavFavorites favorites={data.favorites} />*/}
         {/*<NavWorkspaces workspaces={data.workspaces} />*/}
         {/*<NavSecondary items={data.navSecondary} className="mt-auto" />*/}

@@ -103,14 +103,14 @@ export function CatalogPanel() {
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <CatalogBreadcrumb
         scope={scope}
         activeCategory={selectedCategoryId}
         onUp={onUp}
       />
 
-      <div className="px-1 pb-4 pt-3">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-4 pt-3">
         <AnimatePresence mode="wait">
           {scope.kind === "project" && (
             <ProjectCatalog

@@ -66,25 +66,25 @@ export function SidebarRight({
     <Sidebar
       collapsible="none"
       className={cn(
-        "ticky top-0 hidden h-svh border-l lg:flex pt-2.5",
+        "sticky top-0 hidden h-svh min-h-0 overflow-hidden border-l pt-3.5 lg:flex",
         className,
       )}
       style={{
         minInlineSize: "400px",
         // padding: activeTab === "options" ? "10px" : "",
         backgroundColor: activeTab === "options" ? optionsBgColor : "",
-        overflow: "auto",
+        overflow: "hidden",
         paddingBlockEnd: activeTab === "options" ? "10px" : "",
       }}
       {...props}
     >
       <Tabs
         defaultValue={defaultTab}
-        className="flex flex-col h-full gap-2.5"
+        className="flex h-full min-h-0 flex-col gap-2.5"
         onValueChange={setActiveTab}
         value={activeTab}
       >
-        <SidebarHeader className="border-sidebar-border flex flex-row items-center w-full justify-between px-2.5">
+        <SidebarHeader className="border-sidebar-border flex w-full shrink-0 flex-row items-center justify-between px-2.5">
           {/* Tabs styled to mirror the canvas Design/Questions/Price pill
               (see `TopChrome.tsx`) per Dr. Artemy's 2026-05-13 review.
               Overrides applied at the call site (not on the shared
@@ -119,23 +119,26 @@ export function SidebarRight({
           </TabsList>
         </SidebarHeader>
 
-        <SidebarContent className="flex-1 overflow-auto">
+        <SidebarContent className="min-h-0 flex-1 overflow-hidden">
           <TabsContent
             value="magicAiAdvisor"
-            className="flex flex-col h-full data-[state=active]:flex data-[state=inactive]:hidden"
+            className="flex h-full min-h-0 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden"
           >
             {chatSlot ?? <SidebarRightChat topSubsystemId={topSubsystemId} />}
           </TabsContent>
 
           <TabsContent
             value="team"
-            className="h-full flex items-center justify-center data-[state=active]:flex data-[state=inactive]:hidden"
+            className="flex h-full min-h-0 items-center justify-center overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden"
           >
             <div className="text-gray-500">
               Team functionality coming soon...
             </div>
           </TabsContent>
-          <TabsContent value="options" className="p-[10px]">
+          <TabsContent
+            value="options"
+            className="h-full min-h-0 overflow-hidden p-[10px] data-[state=active]:flex data-[state=inactive]:hidden"
+          >
             {catalogSlot ?? <Options isSidebar category={category} />}
           </TabsContent>
         </SidebarContent>
