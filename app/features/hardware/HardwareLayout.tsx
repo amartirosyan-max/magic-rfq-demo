@@ -137,9 +137,14 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
               value: formatToUSD(project.grandTotalUSD),
             }}
             onNavItemSelect={(item) => {
-              /* Top-level row (the project) clears the selection. */
+              /* Top-level row (the project header) returns to a clean
+               * rack-overview snapshot: clears every selection axis
+               * AND re-centres Screen A's scroller via `resetView()`.
+               * Plain `selectSubsystem(null)` alone wouldn't drop a
+               * canvas-driven rack selection or pull the scroller
+               * back to the row midpoint. */
               if (!item.hr_uid) {
-                selectSubsystem(null);
+                resetView();
                 return;
               }
               /* Toggle: clicking the already-selected row clears it. */
