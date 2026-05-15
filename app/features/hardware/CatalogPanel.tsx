@@ -20,7 +20,7 @@ import {
 } from "./catalog-data";
 import { CatalogEntryCard } from "./CatalogEntryCard";
 import { useComponentEdits } from "./ComponentEditsContext";
-import { hardwareProject } from "./fake-data";
+import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
 import { useCatalogScope } from "./useCatalogScope";
@@ -32,6 +32,7 @@ import type {
 } from "./types";
 
 import componentCpuPng from "~/assets/hardware/PNG+SVG/Component_CPU.png";
+import componentGpuPng from "~/assets/hardware/PNG+SVG/Component_GPU.png";
 import componentRamPng from "~/assets/hardware/PNG+SVG/Component_RAM.png";
 import componentHddPng from "~/assets/hardware/PNG+SVG/Component_HDD.png";
 import componentNetworkPng from "~/assets/hardware/PNG+SVG/Component_Network.png";
@@ -43,6 +44,7 @@ const COMPONENT_ICON: Record<ComponentCategory, string> = {
   storage: componentHddPng,
   network: componentNetworkPng,
   power: componentPowerPng,
+  gpu: componentGpuPng,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -228,14 +230,15 @@ function ProjectCatalog({
 }: {
   onPickSubsystem: (id: string) => void;
 }) {
+  const project = useHardwareProject();
   const { applyEdits, isDeleted, restoreSubsystem } = useSubsystemEdits();
 
   const activeEntries = useMemo(
     () =>
-      hardwareProject.subsystems
+      project.subsystems
         .filter((s) => !isDeleted(s.id))
         .map((s) => subsystemToCatalogEntry(applyEdits(s))),
-    [applyEdits, isDeleted],
+    [applyEdits, isDeleted, project.subsystems],
   );
 
   /* Deleted entries get status="removed" so the existing `StatusBadge`
@@ -244,13 +247,13 @@ function ProjectCatalog({
    * language as the rest of the catalog. */
   const deletedEntries = useMemo<CatalogEntry[]>(
     () =>
-      hardwareProject.subsystems
+      project.subsystems
         .filter((s) => isDeleted(s.id))
         .map((s) => ({
           ...subsystemToCatalogEntry(applyEdits(s)),
           status: "removed" as const,
         })),
-    [applyEdits, isDeleted],
+    [applyEdits, isDeleted, project.subsystems],
   );
 
   return (

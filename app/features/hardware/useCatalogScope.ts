@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { hardwareProject } from "./fake-data";
+import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useActiveSubsystem } from "./useActiveSubsystem";
 import { inProposalCatalogId, platformCatalog } from "./catalog-data";
-import type { CatalogEntry, Subsystem } from "./types";
+import type { CatalogEntry, HardwareProject, Subsystem } from "./types";
 
 /**
  * Drives the right-sidebar Catalog tab. Mirrors how deep the user has
@@ -42,14 +42,14 @@ export type CatalogScope =
     };
 
 export function useCatalogScope(): CatalogScope {
+  const project = useHardwareProject();
   const { selectedUnitId } = useSelection();
   const activeSubsystem = useActiveSubsystem();
 
   return useMemo<CatalogScope>(() => {
     if (!activeSubsystem) return { kind: "project" };
 
-    const list = platformCatalog[activeSubsystem.id] ?? [];
-    const proposalId = inProposalCatalogId[activeSubsystem.id] ?? null;
+    const { list, proposalId } = resolveCatalogSource(project, activeSubsystem);
     const hydrated = hydrateAlternatives(activeSubsystem, list, proposalId);
     const selectedId =
       hydrated.find((e) => e.id === proposalId)?.id ??
@@ -73,7 +73,38 @@ export function useCatalogScope(): CatalogScope {
       alternatives: hydrated,
       selectedId,
     };
-  }, [activeSubsystem, selectedUnitId]);
+  }, [project, activeSubsystem, selectedUnitId]);
+}
+
+/**
+ * Where does this subsystem's catalog live?
+ *
+ *  1. `catalog-data.ts#platformCatalog` — the curated Dell-SKU catalog
+ *     built for the Avaya demo (rich `bestFor` / `spec` / `price` shape,
+ *     keyed by Avaya subsystem ids).
+ *  2. `project.productAlternatives[subsystemId]` — per-project fallback
+ *     defined in the project's data file (used by ADGSA-AI and any
+ *     future project that doesn't ship in `catalog-data.ts`).
+ *
+ * The proposal id is whichever entry's `status === "in-proposal"` —
+ * declared explicitly in `inProposalCatalogId` for Avaya, derived from
+ * the `productAlternatives` list otherwise.
+ */
+function resolveCatalogSource(
+  project: HardwareProject,
+  subsystem: Subsystem,
+): { list: CatalogEntry[]; proposalId: string | null } {
+  const platformList = platformCatalog[subsystem.id];
+  if (platformList && platformList.length > 0) {
+    return {
+      list: platformList,
+      proposalId: inProposalCatalogId[subsystem.id] ?? null,
+    };
+  }
+  const projectList = project.productAlternatives[subsystem.id] ?? [];
+  const proposalId =
+    projectList.find((e) => e.status === "in-proposal")?.id ?? null;
+  return { list: projectList, proposalId };
 }
 
 /**
@@ -131,10 +162,11 @@ function synthesiseFromChassis(subsystem: Subsystem): CatalogEntry {
 
 /** Convenience accessor — used in the breadcrumb for analytics later. */
 export function useCatalogSubsystemId(): string | null {
+  const project = useHardwareProject();
   const { selectedUnitId, selectedSubsystemId } = useSelection();
   if (selectedSubsystemId) return selectedSubsystemId;
   if (selectedUnitId) {
-    for (const rack of hardwareProject.racks) {
+    for (const rack of project.racks) {
       const unit = rack.units.find((u) => u.id === selectedUnitId);
       if (unit) return unit.subsystemId;
     }

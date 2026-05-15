@@ -7,6 +7,7 @@ import {
   MemoryStick,
   Network,
   Plug,
+  Server,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -18,19 +19,13 @@ import type {
   HardwareComponent,
   Subsystem,
 } from "./types";
-/* Real product photos shipped with the demo. Filenames mirror the
- * vendor SKU so it's obvious which image belongs to which chassis at
- * a glance. */
-import productR660 from "~/assets/hardware/products/Dell-PowerEdge-R660.png";
-import productR760 from "~/assets/hardware/products/Dell-PowerEdge-R760.png";
-import productUnity380F from "~/assets/hardware/products/DELL-UNITY-XT-380F.png";
-import productDS6610B from "~/assets/hardware/products/Dell-Connectrix-DS-6610B.png";
-import productS5224F from "~/assets/hardware/products/Dell-EMC-S5224F-ON.png";
-import productN3248 from "~/assets/hardware/products/Dell-EMC-N3248TE-ON.png";
+/* Shared filename → URL map for every chassis image used by the demo. */
+import { CHASSIS_IMAGE_URLS } from "~/features/hardware/chassis-assets";
 /* Component row icons — MUST be static imports so Vite rewrites URLs in
  * production builds. String paths like `/app/assets/...` are not emitted
  * to `dist` and always 404 after `npm run build`. */
 import componentCpuPng from "~/assets/hardware/PNG+SVG/Component_CPU.png";
+import componentGpuPng from "~/assets/hardware/PNG+SVG/Component_GPU.png";
 import componentHddPng from "~/assets/hardware/PNG+SVG/Component_HDD.png";
 import componentNetworkPng from "~/assets/hardware/PNG+SVG/Component_Network.png";
 import componentPowerPng from "~/assets/hardware/PNG+SVG/Component_Power.png";
@@ -41,34 +36,27 @@ import componentNetworkVerstka from "~/assets/hardware/verstka/Component_Network
 import componentPowerVerstka from "~/assets/hardware/verstka/Component_Power.png";
 import componentRamVerstka from "~/assets/hardware/verstka/Component_RAM.png";
 
-/** Chassis image filename → bundled URL. Mirrors `Rack.tsx`. */
-const SERVER_IMAGES: Record<string, string> = {
-  "Dell-PowerEdge-R660.png": productR660,
-  "Dell-PowerEdge-R760.png": productR760,
-  "DELL-UNITY-XT-380F.png": productUnity380F,
-  "Dell-Connectrix-DS-6610B.png": productDS6610B,
-  "Dell-EMC-S5224F-ON.png": productS5224F,
-  "Dell-EMC-N3248TE-ON.png": productN3248,
-};
-
-/* Lucide icons for the five surviving component categories (cpu / memory /
- * storage / network / power). The mapping is intentionally simple so a
- * future swap to dedicated `Component_*.png` icons is a one-line change. */
+/* Lucide icons used as last-resort fallback when the PNG asset is
+ * missing in production. Mapping is intentionally simple so a future
+ * swap to a dedicated `Component_*.png` icon is a one-line change. */
 const CATEGORY_ICON: Record<ComponentCategory, LucideIcon> = {
   cpu: Cpu,
   memory: MemoryStick,
   storage: HardDrive,
   network: Network,
   power: Plug,
+  gpu: Server,
 };
 
-/* Resolved asset URLs (try PNG+SVG first, then verstka copy). */
+/* Resolved asset URLs (try PNG+SVG first, then verstka copy if it
+ * exists). `gpu` has no verstka copy yet, so the array is length 1. */
 const CATEGORY_ICON_URLS: Record<ComponentCategory, readonly string[]> = {
   cpu: [componentCpuPng, componentCpuVerstka],
   memory: [componentRamPng, componentRamVerstka],
   storage: [componentHddPng, componentHddVerstka],
   network: [componentNetworkPng, componentNetworkVerstka],
   power: [componentPowerPng, componentPowerVerstka],
+  gpu: [componentGpuPng],
 };
 
 export interface ScreenCProps {
@@ -100,7 +88,7 @@ export interface ScreenCProps {
  * empty blueprint clicks do not leave this view.
  */
 export function ScreenC({ subsystem }: ScreenCProps) {
-  const chassisImg = SERVER_IMAGES[subsystem.chassis.image];
+  const chassisImg = CHASSIS_IMAGE_URLS[subsystem.chassis.image];
   const { selectedCategoryId, selectCategory, selectUnit } = useSelection();
   const { effectiveComponents } = useComponentEdits();
   /* `subsystem.components` is the static BoQ; `editedComponents` overlays

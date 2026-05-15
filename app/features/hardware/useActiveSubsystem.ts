@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { hardwareProject } from "./fake-data";
+import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
 import type { Subsystem } from "./types";
@@ -23,28 +23,25 @@ import type { Subsystem } from "./types";
  * the user deletes the row from the catalog.
  */
 export function useActiveSubsystem(): Subsystem | null {
+  const project = useHardwareProject();
   const { selectedUnitId, selectedSubsystemId } = useSelection();
   const { applyEdits, isDeleted } = useSubsystemEdits();
 
   return useMemo(() => {
     const resolve = (): Subsystem | null => {
       if (selectedUnitId) {
-        for (const rack of hardwareProject.racks) {
+        for (const rack of project.racks) {
           const unit = rack.units.find((u) => u.id === selectedUnitId);
           if (unit) {
             return (
-              hardwareProject.subsystems.find(
-                (s) => s.id === unit.subsystemId,
-              ) ?? null
+              project.subsystems.find((s) => s.id === unit.subsystemId) ?? null
             );
           }
         }
       }
       if (selectedSubsystemId) {
         return (
-          hardwareProject.subsystems.find(
-            (s) => s.id === selectedSubsystemId,
-          ) ?? null
+          project.subsystems.find((s) => s.id === selectedSubsystemId) ?? null
         );
       }
       return null;
@@ -54,5 +51,12 @@ export function useActiveSubsystem(): Subsystem | null {
     if (!raw) return null;
     if (isDeleted(raw.id)) return null;
     return applyEdits(raw);
-  }, [selectedUnitId, selectedSubsystemId, applyEdits, isDeleted]);
+  }, [
+    selectedUnitId,
+    selectedSubsystemId,
+    applyEdits,
+    isDeleted,
+    project.racks,
+    project.subsystems,
+  ]);
 }

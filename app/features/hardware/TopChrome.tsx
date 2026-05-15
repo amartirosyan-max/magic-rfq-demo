@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { hardwareProject } from "./fake-data";
+import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useActiveSubsystem } from "./useActiveSubsystem";
 
@@ -73,6 +73,7 @@ function BreadcrumbBar() {
    * reflects the navigation depth — e.g.
    *   Project › Avaya POD Cluster – IPO200 › Hyper-v Cluster
    */
+  const project = useHardwareProject();
   const activeSubsystem = useActiveSubsystem();
   const { selectSubsystem, selectUnit } = useSelection();
 
@@ -101,7 +102,7 @@ function BreadcrumbBar() {
         onClick={goToProject}
         className="text-[13px] font-semibold text-white hover:text-slate-100"
       >
-        {hardwareProject.name}
+        {project.name}
       </button>
       {activeSubsystem ? (
         <>
@@ -112,7 +113,7 @@ function BreadcrumbBar() {
               <ChevronDown className="h-3.5 w-3.5 opacity-80 transition-transform group-open:rotate-180" />
             </summary>
             <div className="absolute left-0 top-[120%] z-30 min-w-[220px] rounded-md border border-slate-200 bg-white p-1 shadow-lg">
-              {hardwareProject.subsystems.map((subsystem) => (
+              {project.subsystems.map((subsystem) => (
                 <button
                   key={subsystem.id}
                   type="button"
@@ -181,11 +182,12 @@ function Tabs() {
  * is decorative and the arrows are subtly dimmed.
  */
 function CarouselControl() {
+  const project = useHardwareProject();
   const { selectedRackId, selectRack } = useSelection();
 
   const selectableRacks = useMemo(
-    () => hardwareProject.racks.filter((r) => !r.isEmpty),
-    [],
+    () => project.racks.filter((r) => !r.isEmpty),
+    [project.racks],
   );
 
   const activeIndex = selectedRackId
