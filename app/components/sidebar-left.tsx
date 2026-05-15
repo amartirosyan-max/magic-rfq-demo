@@ -123,7 +123,7 @@ export function SidebarLeft({
         {topSlot}
         <div
           className={cn(
-            "bg-[#dce7f8] flex flex-col items-center justify-center gap-2.5 rounded-md p-4",
+            "bg-[#dce7f8] flex flex-col items-center justify-center gap-2.5 p-4",
             !disableHeaderClick && "cursor-pointer",
           )}
           onClick={

@@ -84,38 +84,16 @@ export function SidebarRight({
         onValueChange={setActiveTab}
         value={activeTab}
       >
-        <SidebarHeader className="border-sidebar-border flex w-full shrink-0 flex-row items-center justify-between px-2.5">
-          {/* Tabs styled to mirror the canvas Design/Questions/Price pill
-              (see `TopChrome.tsx`) per Dr. Artemy's 2026-05-13 review.
-              Overrides applied at the call site (not on the shared
-              `Tabs` primitive) so other usages of TabsList in the app
-              keep their current look. Key overrides:
-                - TabsList: beige rounded pill container, no inner border,
-                  `overflow-visible` so the rounded triggers can show
-                  their corners (default is overflow-hidden).
-                - TabsTrigger: rounded-[8px] white pill, slate border;
-                  the primitive's default
-                  `data-[state=active]:bg-[var(--active-tab)]` keeps the
-                  dark-blue active state intact. */}
-          <TabsList className="h-auto w-full gap-2 rounded-[10px] border-0 bg-[#f7f2ee] p-2 shadow-sm overflow-visible">
-            <TabsTrigger
-              value="magicAiAdvisor"
-              className="flex-1 rounded-[8px] border border-slate-200 bg-white px-4 py-1.5 text-[13px] text-slate-700"
-            >
-              Magic AI Advisor
-            </TabsTrigger>
+        <SidebarHeader className="border-sidebar-border flex w-full shrink-0 flex-row items-center justify-between px-2.5 mt-1.5 ml-[3.5px]">
+          <TabsList className="bg-transparent">
+            <TabsTrigger value="magicAiAdvisor">Magic AI Advisor</TabsTrigger>
             <TabsTrigger
               value="team"
-              className="flex-1 rounded-[8px] border border-slate-200 bg-white px-4 py-1.5 text-[13px] text-slate-700"
+              className="border-l-1 border-r-1 border-l-primary border-r-primary"
             >
               Team
             </TabsTrigger>
-            <TabsTrigger
-              value="options"
-              className="flex-1 rounded-[8px] border border-slate-200 bg-white px-4 py-1.5 text-[13px] text-slate-700"
-            >
-              Catalog
-            </TabsTrigger>
+            <TabsTrigger value="options">Catalog</TabsTrigger>
           </TabsList>
         </SidebarHeader>
 
