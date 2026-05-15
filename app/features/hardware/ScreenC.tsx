@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useComponentEdits } from "./ComponentEditsContext";
+import { formatVendor } from "./format";
 import { useSelection } from "./SelectionContext";
 import type {
   ComponentCategory,
@@ -139,7 +140,7 @@ export function ScreenC({ subsystem }: ScreenCProps) {
         <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-hidden lg:gap-4">
         <PageTitle subsystem={subsystem} />
 
-          <div className="flex min-h-0 max-h-full shrink flex-col gap-2.5 overflow-y-auto overscroll-contain px-0 py-2 sm:px-8 xl:px-28">
+          <div className="flex min-h-0 max-h-full shrink flex-col gap-2.5 overflow-y-auto overscroll-contain scrollbar-none px-0 py-2 sm:px-8 xl:px-28">
             {editedComponents.length === 0 ? (
               <EmptyState />
             ) : (
@@ -416,7 +417,7 @@ function ChassisHero({
             </Badge>
           ) : null}
           <span className="ml-1 text-[12px] text-slate-500">
-            {subsystem.chassis.sizeU}U · {subsystem.chassis.vendor}
+            {subsystem.chassis.sizeU}U · {formatVendor(subsystem.chassis.vendor)}
           </span>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useActiveSubsystem } from "./useActiveSubsystem";
 import { inProposalCatalogId, platformCatalog } from "./catalog-data";
+import { formatVendor } from "./format";
 import type { CatalogEntry, HardwareProject, Subsystem } from "./types";
 
 /**
@@ -153,7 +154,7 @@ function synthesiseFromChassis(subsystem: Subsystem): CatalogEntry {
     name: c.name,
     status: "in-proposal",
     bestFor: subsystem.titleSuffix,
-    spec: `${c.sizeU}U · ${c.vendor}${c.watts ? ` · ${c.watts}W` : ""}`,
+    spec: `${c.sizeU}U · ${formatVendor(c.vendor)}${c.watts ? ` · ${c.watts}W` : ""}`,
     description:
       c.description ||
       "Currently in the proposal. Full catalog entry is being prepared.",

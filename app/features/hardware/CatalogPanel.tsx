@@ -20,6 +20,7 @@ import {
 } from "./catalog-data";
 import { CatalogEntryCard } from "./CatalogEntryCard";
 import { useComponentEdits } from "./ComponentEditsContext";
+import { formatVendor } from "./format";
 import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
@@ -317,7 +318,7 @@ function subsystemToCatalogEntry(subsystem: Subsystem): CatalogEntry {
     name: subsystem.name,
     status: "in-proposal",
     bestFor: `${subsystem.qty} × ${c.name}`,
-    spec: `${c.sizeU}U · ${c.vendor}${watts}`,
+    spec: `${c.sizeU}U · ${formatVendor(c.vendor)}${watts}`,
     description: c.description || subsystem.titleSuffix,
   };
 }
