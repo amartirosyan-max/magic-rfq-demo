@@ -66,6 +66,20 @@ import componentHddPng from "~/assets/hardware/PNG+SVG/Component_HDD.png";
 import componentNetworkPng from "~/assets/hardware/PNG+SVG/Component_Network.png";
 import componentPowerPng from "~/assets/hardware/PNG+SVG/Component_Power.png";
 import componentRamPng from "~/assets/hardware/PNG+SVG/Component_RAM.png";
+import componentAccessoriesV2 from "~/assets/hardware/Components_v2_PNG/Accessories.png";
+import componentCpuV2 from "~/assets/hardware/Components_v2_PNG/CPU.png";
+import componentCoolerV2 from "~/assets/hardware/Components_v2_PNG/Cooler.png";
+import componentFibreCableV2 from "~/assets/hardware/Components_v2_PNG/Fibre_cable.png";
+import componentGpuV2 from "~/assets/hardware/Components_v2_PNG/GPU.png";
+import componentHardDiskV2 from "~/assets/hardware/Components_v2_PNG/Hard_Disk.png";
+import componentM2DriveV2 from "~/assets/hardware/Components_v2_PNG/M2_Drive.png";
+import componentNetworkV2 from "~/assets/hardware/Components_v2_PNG/Network.png";
+import componentPowerV2 from "~/assets/hardware/Components_v2_PNG/Power.png";
+import componentRamV2 from "~/assets/hardware/Components_v2_PNG/RAM.png";
+import componentRaidV2 from "~/assets/hardware/Components_v2_PNG/Raid.png";
+import componentRemoteControlV2 from "~/assets/hardware/Components_v2_PNG/Remote_control.png";
+import componentSoftwareV2 from "~/assets/hardware/Components_v2_PNG/Software.png";
+import componentSupportV2 from "~/assets/hardware/Components_v2_PNG/Support.png";
 
 export interface PreloadAsset {
   href: string;
@@ -101,6 +115,21 @@ const critical: PreloadAsset[] = [
 
 /** Lit up only after the user drills into Screen C / the catalog. */
 const deferred: PreloadAsset[] = [
+  /* Full v2 component icon pack (added 2026-05-18). */
+  { href: componentAccessoriesV2, type: "image/png", priority: "auto" },
+  { href: componentCpuV2, type: "image/png", priority: "auto" },
+  { href: componentCoolerV2, type: "image/png", priority: "auto" },
+  { href: componentFibreCableV2, type: "image/png", priority: "auto" },
+  { href: componentGpuV2, type: "image/png", priority: "auto" },
+  { href: componentHardDiskV2, type: "image/png", priority: "auto" },
+  { href: componentM2DriveV2, type: "image/png", priority: "auto" },
+  { href: componentNetworkV2, type: "image/png", priority: "auto" },
+  { href: componentPowerV2, type: "image/png", priority: "auto" },
+  { href: componentRamV2, type: "image/png", priority: "auto" },
+  { href: componentRaidV2, type: "image/png", priority: "auto" },
+  { href: componentRemoteControlV2, type: "image/png", priority: "auto" },
+  { href: componentSoftwareV2, type: "image/png", priority: "auto" },
+  { href: componentSupportV2, type: "image/png", priority: "auto" },
   { href: componentCpuVerstka, type: "image/png", priority: "auto" },
   { href: componentRamVerstka, type: "image/png", priority: "auto" },
   { href: componentHddVerstka, type: "image/png", priority: "auto" },
