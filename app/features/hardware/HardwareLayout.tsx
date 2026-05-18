@@ -150,10 +150,13 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
                 resetView();
                 return;
               }
-              /* Toggle: clicking the already-selected row clears it. */
-              selectSubsystem(
-                item.hr_uid === selectedSubsystemId ? null : item.hr_uid,
-              );
+              /* Toggle: clicking the already-selected row should behave like
+               * Preview Proposal: clear selected rack + subsystem and re-centre. */
+              if (item.hr_uid === selectedSubsystemId) {
+                resetView();
+                return;
+              }
+              selectSubsystem(item.hr_uid);
             }}
           />
 
