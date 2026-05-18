@@ -13,7 +13,6 @@ import {
   FormItem,
   FormMessage,
 } from "~/components/ui/form";
-import { Input } from "~/components/ui/input";
 import ProjectsView from "~/components/ui/projectsTable";
 import { Textarea } from "~/components/ui/textarea";
 import { demoProjectHistoryRows } from "~/features/hardware/adapter";
@@ -75,27 +74,18 @@ export default function Page() {
                       variant="ghost"
                       type="button"
                       disabled
-                      className="bg-[#EEF3F9] rounded-none justify-center px-5 py-3 relative w-32 items-center disabled:opacity-70"
+                      className="bg-[#EEF3F9] rounded-none justify-center px-5 py-3 w-32 items-center disabled:opacity-70"
                     >
                       <Plus /> Upload RFP
-                      <Input
-                        id="fileUpload"
-                        type="file"
-                        disabled
-                        multiple
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                        accept=".doc, .docx, .pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf"
-                        onChange={() => undefined}
-                      />
                     </Button>
                   </div>
-                  <Button
+                  {/* <Button
                     type="submit"
                     disabled
                     className="w-fit self-start"
                   >
                     Create <SendHorizontal className="ml-2 h-4 w-4" />
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </CardContent>

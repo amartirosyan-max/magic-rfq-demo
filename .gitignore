@@ -12,3 +12,4 @@
 .npm-cache
 .env
 .env.local
+.vercel
