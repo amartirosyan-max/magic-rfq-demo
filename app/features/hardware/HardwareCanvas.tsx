@@ -4,6 +4,12 @@ import gridTileUrl from "~/assets/hardware/PNG+SVG/BG_Blue_Grid_Tile_2.png";
 import { ScreenA } from "./ScreenA";
 import { ScreenC } from "./ScreenC";
 import { TopChrome } from "./TopChrome";
+import {
+  GRID_SCALE_DEEP_DIVE,
+  GRID_SCALE_OVERVIEW,
+  GRID_SCALE_RACK_FOCUS,
+  hardwareSpring,
+} from "./motion";
 import { useSelection } from "./SelectionContext";
 import { useActiveSubsystem } from "./useActiveSubsystem";
 
@@ -44,12 +50,16 @@ export function HardwareCanvas() {
    * we should render Screen C; null means stay on Screen A. */
   const activeSubsystem = useActiveSubsystem();
 
-  /* Background grid zooms in slightly whenever the user has "dived" into
-   * a rack OR into a subsystem — same "step closer" feel for both. */
-  const isZoomed =
-    selectedRackId !== null ||
-    selectedUnitId !== null ||
-    selectedSubsystemId !== null;
+  /* Grid scale tracks rack "dive depth" — 1.15× on rack focus (same as
+   * the selected rack), 1.8× on Screen C; one spring for lockstep motion. */
+  const isDeepDive =
+    selectedUnitId !== null || selectedSubsystemId !== null;
+  const isRackFocused = selectedRackId !== null;
+  const gridScale = isDeepDive
+    ? GRID_SCALE_DEEP_DIVE
+    : isRackFocused
+      ? GRID_SCALE_RACK_FOCUS
+      : GRID_SCALE_OVERVIEW;
 
   return (
     <section
@@ -74,20 +84,19 @@ export function HardwareCanvas() {
        *   - Slightly bolder than before (opacity 0.65 vs 0.50) so the
        *     blueprint character is more present without overpowering the
        *     rack contents.
-       *   - The zoom-in on "dive" should be a barely-perceptible nudge,
-       *     not a swoop — keeps the canvas calm. Only the grid layer
-       *     scales; the BG_Blue gradient and racks live in their own
-       *     subtrees. */}
+       *   - Rack focus uses the same 1.15× scale and spring as the
+       *     selected rack; Screen C uses a stronger 1.8× zoom. Only the
+       *     grid layer scales; the BG_Blue gradient stays fixed. */}
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-repeat opacity-65"
+        className="pointer-events-none absolute inset-0 origin-center bg-repeat opacity-65"
         style={{
           backgroundImage: `url(${gridTileUrl})`,
-          backgroundPosition: "0 0",
+          backgroundPosition: "center",
           backgroundSize: "72px 72px",
         }}
-        animate={{ scale: isZoomed ? 1.8 : 1 }}
-        transition={{ type: "spring", stiffness: 180, damping: 28 }}
+        animate={{ scale: gridScale }}
+        transition={hardwareSpring}
       />
 
       <TopChrome />
