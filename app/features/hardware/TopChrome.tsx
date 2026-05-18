@@ -6,6 +6,7 @@ import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useActiveSubsystem } from "./useActiveSubsystem";
 
+/* Hidden — Design / Questions / Price tab tray (uncomment to restore).
 type DesignTab = "design" | "questions" | "price";
 
 const TABS: { id: DesignTab; label: string }[] = [
@@ -14,23 +15,15 @@ const TABS: { id: DesignTab; label: string }[] = [
   { id: "price", label: "Price" },
 ];
 
-/* Width budget reserved around the canvas-centred carousel.
- * The carousel pill measures ~110 px at its widest (3 dots + arrows
- * + padding). We reserve a slightly larger half-width on each side so
- * the tab tray on the left can never overlap with the centred pill,
- * no matter how narrow the middle column gets.
- *
- * 7rem = 112 px on each side  →  carousel ≤ 224 px corridor in the middle.
- */
 const CAROUSEL_CORRIDOR = "7rem";
+*/
 
 /**
  * Top chrome that floats OVER the blueprint canvas. Two rows:
  *
  *  Row 1 — translucent navy breadcrumb bar.
- *  Row 2 — Design / Questions / Price tabs on the LEFT and the rack
- *          carousel control CENTRED on the canvas. The tab tray is
- *          width-capped so it can never reach the centred carousel.
+ *  Row 2 — rack carousel centred on the canvas (Screen A only).
+ *          Design / Questions / Price tabs are commented out below.
  *
  * The whole chrome wraps with `pointer-events-none` so the grid clicks
  * through, and re-enables pointer-events on each interactive pill.
@@ -45,25 +38,23 @@ export function TopChrome() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-2 px-3 pt-3 sm:px-6 sm:pt-4">
       <BreadcrumbBar />
-      {/* One row: tabs left (absolute, capped width), carousel centred via
-          `flex justify-center`. Using flex-justify here (instead of
-          absolute + `translate-x-1/2`) makes the carousel share the SAME
-          sub-pixel rounding as ScreenA's centred rack row, so the pill
-          stays exactly above the centred rack across Chrome/Safari/etc. */}
-      <div className="relative mt-2 flex min-h-9 w-full min-w-0 items-center justify-center sm:mt-3">
-        <div
-          className="pointer-events-auto absolute inset-y-0 left-0 flex min-w-0 items-center"
-          style={{
-            maxWidth: inScreenC
-              ? "100%"
-              : `calc(50% - ${CAROUSEL_CORRIDOR})`,
-          }}
-        >
-          <Tabs />
+      {!inScreenC ? (
+        <div className="relative mt-2 flex min-h-9 w-full min-w-0 items-center justify-center sm:mt-3">
+          {/* Hidden: Design / Questions / Price tabs (uncomment block + Tabs below).
+          <motion.div
+            className="pointer-events-auto absolute inset-y-0 left-0 flex min-w-0 items-center"
+            style={{
+              maxWidth: inScreenC
+                ? "100%"
+                : `calc(50% - ${CAROUSEL_CORRIDOR})`,
+            }}
+          >
+            <Tabs />
+          </div>
+          */}
+          <CarouselControl />
         </div>
-
-        {!inScreenC ? <CarouselControl /> : null}
-      </div>
+      ) : null}
     </div>
   );
 }
@@ -146,14 +137,8 @@ function BreadcrumbBar() {
   );
 }
 
+/* Hidden — Design / Questions / Price tab tray (uncomment to restore).
 function Tabs() {
-  /* Tabs scale with available width:
-   *   – very narrow:   compact (px-2 py-1, 11 px text)
-   *   – `sm` (≥640):  slightly more padding, xs text
-   *   – `xl` (≥1280): full pills (px-5, sm text)
-   * Buttons share width via `flex-1 basis-0 truncate` so all three labels
-   * stay inside the beige tray and ellipsise only if there's truly no
-   * room (very rare with these breakpoints). */
   return (
     <motion.div
       role="tablist"
@@ -183,6 +168,7 @@ function Tabs() {
     </motion.div>
   );
 }
+*/
 
 /**
  * Rack carousel control.

@@ -140,11 +140,13 @@ export function CatalogPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {/* Hidden: catalog breadcrumb / back routing (uncomment to restore).
       <CatalogBreadcrumb
         scope={scope}
         activeCategory={activeCategory}
         onUp={onUp}
       />
+      */}
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-4 pt-3">
         <AnimatePresence mode="wait">
@@ -408,11 +410,9 @@ function SubsystemCatalog({
       transition={{ duration: 0.18 }}
       className="flex flex-col gap-3"
     >
-      {/* Subsystem edit card pinned at the top — rename / qty / delete.
-          This is the only place where the user can rename a subsystem or
-          remove it from the project (clicks in the left sidebar are a
-          pure selector). */}
+      {/* Hidden: subsystem edit + chassis qty / delete (uncomment to restore).
       <SubsystemEditCard subsystem={subsystem} />
+      */}
 
       {alternatives.length === 0 ? (
         <EmptyHint
@@ -421,6 +421,7 @@ function SubsystemCatalog({
         />
       ) : (
         <>
+          {/* Hidden: swap chassis hint (uncomment to restore).
           <SectionHint
             body={
               swappedAwayFromOriginal
@@ -428,6 +429,7 @@ function SubsystemCatalog({
                 : `Swap chassis — ${alternatives.length} platforms compatible with this subsystem. The one in the proposal is highlighted at the top.`
             }
           />
+          */}
           <div className="flex flex-col gap-1.5">
             {ordered.map((entry) => {
               const isActive = entry.id === activeId;
@@ -571,6 +573,7 @@ function SubsystemEditCard({ subsystem }: { subsystem: Subsystem }) {
         )}
       </div>
 
+      {/* Hidden: chassis qty stepper + delete (uncomment to restore).
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
@@ -609,6 +612,7 @@ function SubsystemEditCard({ subsystem }: { subsystem: Subsystem }) {
           Delete
         </button>
       </div>
+      */}
     </article>
   );
 }
@@ -917,9 +921,8 @@ function InstalledComponentCard({
         </div>
       </div>
 
+      {/* Hidden: per-chassis qty stepper + delete (uncomment to restore).
       <div className="mt-3 flex items-center justify-between gap-3">
-        {/* Qty stepper — disabled when the row is deleted (qty has no
-            meaning until the row is restored). */}
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
             Per chassis
@@ -945,7 +948,6 @@ function InstalledComponentCard({
           </div>
         </div>
 
-        {/* Delete / restore button — clicking again toggles state. */}
         {deleted ? (
           <button
             type="button"
@@ -974,6 +976,7 @@ function InstalledComponentCard({
           </button>
         )}
       </div>
+      */}
     </article>
   );
 }
@@ -1013,9 +1016,13 @@ function StepperButton({
 /* -------------------------------------------------------------------------- */
 
 function SectionHint({ body }: { body: string }) {
+  void body;
+  /* Hidden — catalog section hints (uncomment to restore).
   return (
     <p className="px-2 text-[12px] leading-relaxed text-slate-500">{body}</p>
   );
+  */
+  return null;
 }
 
 function EmptyHint({ title, body }: { title: string; body: string }) {

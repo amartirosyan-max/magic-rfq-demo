@@ -52,11 +52,11 @@ const CATEGORY_ICON: Record<ComponentCategory, LucideIcon> = {
 /* Resolved asset URLs (try PNG+SVG first, then verstka copy if it
  * exists). `gpu` has no verstka copy yet, so the array is length 1. */
 /** Horizontal inset on the component list (matches pre-alignment layout). */
-const SCREEN_C_LIST_PAD = "px-0 py-2 sm:px-8 xl:px-24";
+const SCREEN_C_LIST_PAD = "px-0 py-2";
 
-/** At xl+, title left edge = list gutter (6rem) + icon column (52px) + gap-3. */
-const SCREEN_C_TITLE_XL_ALIGN =
-  "xl:justify-start xl:px-0 xl:pl-[calc(6rem+4rem)] xl:pr-24";
+/** Shared with `ComponentCard`: icon strip width + gap before the white card. */
+const SCREEN_C_ICON_COL = "w-[52px] shrink-0";
+const SCREEN_C_ROW_GAP = "gap-3";
 
 const CATEGORY_ICON_URLS: Record<ComponentCategory, readonly string[]> = {
   cpu: [componentCpuPng, componentCpuVerstka],
@@ -130,7 +130,7 @@ export function ScreenC({ subsystem }: ScreenCProps) {
   return (
     <motion.div
       key={`screen-c-${subsystem.id}`}
-      className="relative z-0 flex h-full min-h-0 flex-1 flex-col px-6 pb-6 pt-40 sm:px-8 lg:px-12 lg:pb-8 lg:pt-42"
+      className="relative z-0 flex h-full min-h-0 flex-1 flex-col px-3 pb-6 sm:px-6 pt-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -142,7 +142,7 @@ export function ScreenC({ subsystem }: ScreenCProps) {
           one centred stack while they fit; when they don't, only the cards
           list shrinks into a scroll region and the chassis stays visible at
           the bottom of the available canvas. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden mx-10 sm:mx-0 xl:mx-20">
         {/* === Page title ========================================= */}
         <motion.div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-hidden lg:gap-4">
         <PageTitle subsystem={subsystem} />
@@ -193,16 +193,32 @@ function PageTitle({ subsystem }: { subsystem: Subsystem }) {
       exit={{ y: -16, opacity: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
       className={cn(
-        "flex w-full shrink-0 items-baseline justify-center gap-3 px-1 text-white drop-shadow-sm",
-        SCREEN_C_TITLE_XL_ALIGN,
+        "flex w-full shrink-0 items-baseline text-white drop-shadow-sm",
+        SCREEN_C_ROW_GAP,
       )}
     >
-      <span className="text-[26px] font-bold leading-none tracking-tight">
-        {subsystem.qty} × {subsystem.chassis.name}
-      </span>
-      <span className="text-[16px] font-medium text-white/85">
-        {subsystem.titleSuffix}
-      </span>
+      {/* Qty lines up with the component icon column below. */}
+      <div
+        className={cn(
+          "flex items-center justify-center",
+          SCREEN_C_ICON_COL,
+        )}
+      >
+        <span className="text-center text-[26px] font-bold leading-none tracking-tight">
+          <span className="tabular-nums">{subsystem.qty}</span>
+          <span className="ml-0.5">×</span>
+        </span>
+      </div>
+
+      {/* Chassis name lines up with the white component cards below. */}
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
+        <span className="text-[26px] font-bold leading-none tracking-tight">
+          {subsystem.chassis.name}
+        </span>
+        <span className="text-[16px] font-medium text-white/85">
+          {subsystem.titleSuffix}
+        </span>
+      </div>
     </motion.div>
   );
 }
@@ -254,12 +270,18 @@ function ComponentCard({
         delay: 0.18 + index * 0.07,
       }}
       className={cn(
-        "group flex w-full cursor-pointer items-stretch gap-3 text-left",
+        "group flex w-full cursor-pointer items-stretch text-left",
+        SCREEN_C_ROW_GAP,
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#70CDFF]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3b6bb1]",
       )}
     >
       {/* Icon sits OUTSIDE the white card, as in the reference UI. */}
-      <div className="flex w-[52px] shrink-0 items-center justify-center">
+      <div
+        className={cn(
+          "flex items-center justify-center",
+          SCREEN_C_ICON_COL,
+        )}
+      >
         <ComponentIcon
           category={component.category}
           fallbackIcon={Icon}
@@ -402,7 +424,7 @@ function ChassisHero({
           power/heat badges at the bottom. */}
       <div
         className={cn(
-          "mx-2 flex min-w-0 flex-1 flex-col gap-2 bg-white/95 px-5 py-4",
+          "flex min-w-0 flex-1 flex-col gap-2 bg-white/95 px-5 py-4",
           "shadow-[0_1px_2px_rgba(15,23,42,0.06),0_4px_14px_rgba(15,23,42,0.10)]",
           "ring-2 ring-inset transition-colors duration-150",
           "max-[1200px]:w-full max-[1200px]:max-w-[420px] max-[1200px]:flex-none max-[1200px]:px-4 max-[1200px]:py-3",
@@ -466,7 +488,7 @@ function EmptyState() {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 240, opacity: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 26, delay: 0.18 }}
-      className="pointer-events-none mx-6 border border-dashed border-white/35 bg-white/[0.08] px-5 py-5 text-center text-[12.5px] leading-snug text-white/65 backdrop-blur-[1px]"
+      className="pointer-events-none border border-dashed border-white/35 bg-white/[0.08] px-5 py-5 text-center text-[12.5px] leading-snug text-white/65 backdrop-blur-[1px]"
       aria-hidden
     >
       <span className="block text-[11px] font-medium uppercase tracking-wide text-white/45">
