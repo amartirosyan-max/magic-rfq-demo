@@ -20,6 +20,8 @@ export function StatusBadge({
   status: CatalogStatus;
   className?: string;
 }) {
+  if (status === "in-proposal") return null;
+
   return (
     <span
       className={cn(
