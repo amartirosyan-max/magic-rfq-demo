@@ -18,11 +18,11 @@ export default [
     route("register", "auth/register.tsx"),
   ]),
 
-  layout("routes/PrivateRoute.tsx", [
-    layout("layouts/dashboard.tsx", [
-      route("dashboard", "routes/dashboard/index.tsx"),
-    ]),
+  layout("layouts/dashboard.tsx", [
+    route("dashboard", "routes/dashboard/index.tsx"),
+  ]),
 
+  layout("routes/PrivateRoute.tsx", [
     layout("layouts/lead-score.tsx", [
       route("projects/:id/lead-score", "routes/lead-score.tsx", {
         id: "project-lead-score",

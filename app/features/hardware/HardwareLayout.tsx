@@ -1,5 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
+import { SiteHeader } from "~/components/site-header";
 import { SidebarLeft } from "~/components/sidebar-left";
 import { SidebarRight } from "~/components/sidebar-right";
 import { DiagramProvider } from "~/context/DiagramContext";
@@ -116,13 +117,15 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
 
   return (
     <DiagramProvider>
-      <SidebarProvider className="[--header-height:calc(--spacing(14))] overflow-hidden max-h-screen">
-        <div className="flex flex-1 h-screen w-full">
+      <SidebarProvider className="[--header-height:calc(--spacing(14))] h-svh overflow-hidden">
+        <SiteHeader />
+        <div className="flex min-h-0 flex-1 w-full overflow-hidden">
           <SidebarLeft
+            collapsible="none"
             project={projectResponse}
             navItems={navItems}
             projectPriceData={projectPriceData}
-            className="h-screen border-r-0 p-4"
+            className="h-full border-r-0 p-4"
             topSlot={<HardwareLogo />}
             disableHeaderClick
             onPreviewProposalClick={() => {
@@ -154,12 +157,12 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
             }}
           />
 
-          <SidebarInset className="flex flex-col h-screen min-w-0 bg-transparent">
-            {children}
+          <SidebarInset className="flex min-h-0 flex-1 flex-col min-w-0 bg-transparent">
+            <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
           </SidebarInset>
 
           <SidebarRight
-            className="h-screen bg-slate-100"
+            className="h-full bg-slate-100"
             sidebarMode="options"
             category="infrastructure"
             defaultTab="options"

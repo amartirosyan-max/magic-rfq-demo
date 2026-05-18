@@ -25,6 +25,13 @@ import { CHASSIS_IMAGE_URLS } from "~/features/hardware/chassis-assets";
 /* Component row icons — MUST be static imports so Vite rewrites URLs in
  * production builds. String paths like `/app/assets/...` are not emitted
  * to `dist` and always 404 after `npm run build`. */
+import componentCpuV2 from "~/assets/hardware/Components_v2_PNG/CPU.png";
+import componentGpuV2 from "~/assets/hardware/Components_v2_PNG/GPU.png";
+import componentStorageV2 from "~/assets/hardware/Components_v2_PNG/Hard_Disk.png";
+import componentStorageM2V2 from "~/assets/hardware/Components_v2_PNG/M2_Drive.png";
+import componentNetworkV2 from "~/assets/hardware/Components_v2_PNG/Network.png";
+import componentPowerV2 from "~/assets/hardware/Components_v2_PNG/Power.png";
+import componentRamV2 from "~/assets/hardware/Components_v2_PNG/RAM.png";
 import componentCpuPng from "~/assets/hardware/PNG+SVG/Component_CPU.png";
 import componentGpuPng from "~/assets/hardware/PNG+SVG/Component_GPU.png";
 import componentHddPng from "~/assets/hardware/PNG+SVG/Component_HDD.png";
@@ -49,8 +56,11 @@ const CATEGORY_ICON: Record<ComponentCategory, LucideIcon> = {
   gpu: Server,
 };
 
-/* Resolved asset URLs (try PNG+SVG first, then verstka copy if it
- * exists). `gpu` has no verstka copy yet, so the array is length 1. */
+/* Resolved asset URLs:
+ *   1) new v2 icon pack under `Components_v2_PNG/`
+ *   2) existing PNG+SVG icons
+ *   3) legacy verstka copies
+ * `gpu` has no verstka fallback; `storage` gets both hard-disk + M.2 v2 icons. */
 /** Horizontal inset on the component list (matches pre-alignment layout). */
 const SCREEN_C_LIST_PAD = "px-0 py-2";
 
@@ -59,12 +69,17 @@ const SCREEN_C_ICON_COL = "w-[52px] shrink-0";
 const SCREEN_C_ROW_GAP = "gap-3";
 
 const CATEGORY_ICON_URLS: Record<ComponentCategory, readonly string[]> = {
-  cpu: [componentCpuPng, componentCpuVerstka],
-  memory: [componentRamPng, componentRamVerstka],
-  storage: [componentHddPng, componentHddVerstka],
-  network: [componentNetworkPng, componentNetworkVerstka],
-  power: [componentPowerPng, componentPowerVerstka],
-  gpu: [componentGpuPng],
+  cpu: [componentCpuV2, componentCpuPng, componentCpuVerstka],
+  memory: [componentRamV2, componentRamPng, componentRamVerstka],
+  storage: [
+    componentStorageV2,
+    componentStorageM2V2,
+    componentHddPng,
+    componentHddVerstka,
+  ],
+  network: [componentNetworkV2, componentNetworkPng, componentNetworkVerstka],
+  power: [componentPowerV2, componentPowerPng, componentPowerVerstka],
+  gpu: [componentGpuV2, componentGpuPng],
 };
 
 export interface ScreenCProps {
@@ -142,7 +157,7 @@ export function ScreenC({ subsystem }: ScreenCProps) {
           one centred stack while they fit; when they don't, only the cards
           list shrinks into a scroll region and the chassis stays visible at
           the bottom of the available canvas. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden mx-10 sm:mx-0 xl:mx-20">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden mx-6 sm:mx-10 lg:mx-0 xl:mx-20 2xl:mx-28">
         {/* === Page title ========================================= */}
         <motion.div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-hidden lg:gap-4">
         <PageTitle subsystem={subsystem} />

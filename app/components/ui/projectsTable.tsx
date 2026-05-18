@@ -94,6 +94,7 @@ type ProjectsViewProps = {
   onRowClick?: (row: Row<ProjectResponse>) => void;
   /** При клике по статусу good/suggestion в таблицах Projects/Feedback — переход на Proposal с скроллом к секции */
   onProposalSectionClick?: (projectId: number, sectionIndex: number) => void;
+  hideProjectActions?: boolean;
 };
 
 const getInitials = (name: string) => {
@@ -183,6 +184,7 @@ const ProjectsView = ({
   projects,
   onRowClick,
   onProposalSectionClick,
+  hideProjectActions = false,
 }: ProjectsViewProps) => {
   const { account } = useAuth();
   const canAccessAdminTabs = isAdminRole(account?.role);
@@ -577,6 +579,7 @@ const ProjectsView = ({
         id: "actions",
         header: "",
         cell: ({ row }) => {
+          if (hideProjectActions) return null;
           const project = row.original;
           const isOpen = openActionsRowId === project.id;
           return (
@@ -638,6 +641,7 @@ const ProjectsView = ({
       setOpenActionsRowId,
       setProjectToDelete,
       onProposalSectionClick,
+      hideProjectActions,
     ],
   );
 
