@@ -142,7 +142,7 @@ export function ScreenC({ subsystem }: ScreenCProps) {
           one centred stack while they fit; when they don't, only the cards
           list shrinks into a scroll region and the chassis stays visible at
           the bottom of the available canvas. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden mx-10 sm:mx-0 xl:mx-20">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden mx-6 sm:mx-10 lg:mx-0 xl:mx-20 2xl:mx-28">
         {/* === Page title ========================================= */}
         <motion.div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-hidden lg:gap-4">
         <PageTitle subsystem={subsystem} />

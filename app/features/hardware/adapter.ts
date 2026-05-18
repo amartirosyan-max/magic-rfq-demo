@@ -19,13 +19,91 @@
 import type { IProjectPriceResponse } from "~/api/billing";
 import {
   CreatingStatus,
+  type IProjectFeedbackItem,
   type ProjectResponse,
   SystemGenerationStatus,
 } from "~/types/project";
 import type { NavItem } from "~/types/navigation";
 import type { HardwareProject, Subsystem } from "./types";
+import { adgsaProject } from "./projects/adgsa-ai";
+import { avayaProject } from "./projects/avaya";
 
 const FAKE_PROJECT_ID = 1001;
+
+export type DemoProjectHistoryRow = ProjectResponse & {
+  routePath: string;
+  isDemoRow: true;
+};
+
+function makeFeedbacks(
+  statuses: Array<"good" | "suggestion">,
+): IProjectFeedbackItem[] {
+  return statuses.map((status, idx) => ({
+    section_index: idx,
+    section_title: `Section ${idx + 1}`,
+    feedback_status: status,
+    comment: null,
+  }));
+}
+
+function toDemoHistoryRow(
+  project: HardwareProject,
+  config: {
+    id: number;
+    submissionDeadline: string;
+    budgetEstimation: string;
+    timeline: string;
+    proposalConfidence: number;
+    quality: Array<"good" | "suggestion">;
+  },
+): DemoProjectHistoryRow {
+  return {
+    id: config.id,
+    name: project.name,
+    client_name: project.clientName,
+    description: project.description,
+    industry: project.industry,
+    budget_estimation: config.budgetEstimation,
+    timeline: config.timeline,
+    submission_deadline: config.submissionDeadline,
+    creating_progress: 100,
+    creating_message: "",
+    creating_status: CreatingStatus.COMPLETED,
+    system_generation_progress: 100,
+    system_generation_message: "",
+    system_generation_status: SystemGenerationStatus.COMPLETED,
+    organization_id: 1,
+    organization_name: "Magic UI Demo",
+    user_division: "Pre-sales",
+    user_location: "Abu Dhabi",
+    user_name: "Demo User",
+    lead_score: project.leadScore,
+    proposal_confidence: config.proposalConfidence,
+    questionnaire_completion: 1,
+    feedbacks: makeFeedbacks(config.quality),
+    routePath: project.routePath,
+    isDemoRow: true,
+  };
+}
+
+export const demoProjectHistoryRows: DemoProjectHistoryRow[] = [
+  toDemoHistoryRow(adgsaProject, {
+    id: 1002,
+    submissionDeadline: "2026-06-15",
+    budgetEstimation: "$10M - $25M",
+    timeline: "18-month go-live",
+    proposalConfidence: 0.94,
+    quality: ["good", "good", "good", "suggestion", "good", "good"],
+  }),
+  toDemoHistoryRow(avayaProject, {
+    id: 1001,
+    submissionDeadline: "2026-06-30",
+    budgetEstimation: "USD 644,475",
+    timeline: "Q2 2026 delivery",
+    proposalConfidence: 0.92,
+    quality: ["good", "good", "suggestion", "good", "good", "good"],
+  }),
+];
 
 /** Minimal `ProjectResponse` strong-typed for the left sidebar. */
 export function getFakeProject(project: HardwareProject): ProjectResponse {

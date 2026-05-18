@@ -1,10 +1,11 @@
 import { Navigate } from "react-router";
 
 /**
- * Root entry. For the hardware-configurator demo we always land on /avaya.
- * Login / dashboard routes remain reachable directly (e.g. /login) so the
- * existing app keeps working for development.
+ * Root entry for the demo dashboard screen.
+ *
+ * Users first see the old Magic UI shell (disabled create/upload +
+ * two demo history rows) and can open either hardware route from there.
  */
 export default function Home() {
-  return <Navigate to="/avaya" replace />;
+  return <Navigate to="/dashboard" replace />;
 }
