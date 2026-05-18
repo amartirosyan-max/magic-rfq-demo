@@ -51,6 +51,13 @@ const CATEGORY_ICON: Record<ComponentCategory, LucideIcon> = {
 
 /* Resolved asset URLs (try PNG+SVG first, then verstka copy if it
  * exists). `gpu` has no verstka copy yet, so the array is length 1. */
+/** Horizontal inset on the component list (matches pre-alignment layout). */
+const SCREEN_C_LIST_PAD = "px-0 py-2 sm:px-8 xl:px-24";
+
+/** At xl+, title left edge = list gutter (6rem) + icon column (52px) + gap-3. */
+const SCREEN_C_TITLE_XL_ALIGN =
+  "xl:justify-start xl:px-0 xl:pl-[calc(6rem+4rem)] xl:pr-24";
+
 const CATEGORY_ICON_URLS: Record<ComponentCategory, readonly string[]> = {
   cpu: [componentCpuPng, componentCpuVerstka],
   memory: [componentRamPng, componentRamVerstka],
@@ -90,7 +97,7 @@ export interface ScreenCProps {
  */
 export function ScreenC({ subsystem }: ScreenCProps) {
   const chassisImg = CHASSIS_IMAGE_URLS[subsystem.chassis.image];
-  const { selectedCategoryId, selectCategory, selectUnit } = useSelection();
+  const { selectedComponentId, selectComponent, selectUnit } = useSelection();
   const { effectiveComponents } = useComponentEdits();
   /* `subsystem.components` is the static BoQ; `editedComponents` overlays
    * the user's qty / description / delete tweaks from `ComponentEditsContext`.
@@ -99,17 +106,17 @@ export function ScreenC({ subsystem }: ScreenCProps) {
   const editedComponents = effectiveComponents(subsystem);
 
   /* The "Screen C focus" model:
-   *   - selectedCategoryId === null  → the chassis hero is the active focus
+   *   - selectedComponentId === null → the chassis hero is the active focus
    *     (mirrors the right-sidebar showing chassis alternatives or the
    *     component chip row).
-   *   - selectedCategoryId set       → that component row is the active
-   *     focus, sidebar drills into its SKU list.
-   * Clicking a row toggles its category. Clicking the chassis hero clears
-   * both the category drill AND any unit pin, so we land on the
-   * subsystem-level catalog view (alternatives).
+   *   - selectedComponentId set      → that single BoQ row is the active
+   *     focus, sidebar drills into its category SKU list.
+   * Clicking a row toggles by component id so two "Hard Drive / SSD"
+   * lines never highlight together. Clicking the chassis hero clears
+   * both the component drill AND any unit pin.
    */
-  const handlePickCategory = (category: ComponentCategory) => {
-    selectCategory(category === selectedCategoryId ? null : category);
+  const handlePickComponent = (componentId: string) => {
+    selectComponent(componentId === selectedComponentId ? null : componentId);
   };
 
   const handlePickChassis = () => {
@@ -117,7 +124,7 @@ export function ScreenC({ subsystem }: ScreenCProps) {
      * when the user came in via a rack-unit click and now wants to see
      * what else could go in this slot. */
     selectUnit(null);
-    selectCategory(null);
+    selectComponent(null);
   };
 
   return (
@@ -137,10 +144,15 @@ export function ScreenC({ subsystem }: ScreenCProps) {
           the bottom of the available canvas. */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
         {/* === Page title ========================================= */}
-        <div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-hidden lg:gap-4">
+        <motion.div className="flex min-h-0 flex-1 flex-col justify-center gap-3 overflow-hidden lg:gap-4">
         <PageTitle subsystem={subsystem} />
 
-          <div className="flex min-h-0 max-h-full shrink flex-col gap-2.5 overflow-y-auto overscroll-contain scrollbar-none px-0 py-2 sm:px-8 xl:px-28">
+          <motion.div
+            className={cn(
+              "flex min-h-0 max-h-full shrink flex-col gap-2.5 overflow-y-auto overscroll-contain scrollbar-none",
+              SCREEN_C_LIST_PAD,
+            )}
+          >
             {editedComponents.length === 0 ? (
               <EmptyState />
             ) : (
@@ -149,21 +161,21 @@ export function ScreenC({ subsystem }: ScreenCProps) {
                   key={component.id}
                   component={component}
                   index={idx}
-                  selected={selectedCategoryId === component.category}
-                  onSelect={() => handlePickCategory(component.category)}
+                  selected={selectedComponentId === component.id}
+                  onSelect={() => handlePickComponent(component.id)}
                 />
               ))
             )}
-          </div>
+          </motion.div>
 
           {/* === Chassis hero ====================================== */}
           <ChassisHero
             subsystem={subsystem}
             chassisImg={chassisImg}
-            selected={selectedCategoryId === null}
+            selected={selectedComponentId === null}
             onSelect={handlePickChassis}
           />
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
@@ -180,7 +192,10 @@ function PageTitle({ subsystem }: { subsystem: Subsystem }) {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -16, opacity: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
-      className="flex w-full shrink-0 items-baseline justify-center gap-3 px-1 text-white drop-shadow-sm"
+      className={cn(
+        "flex w-full shrink-0 items-baseline justify-center gap-3 px-1 text-white drop-shadow-sm",
+        SCREEN_C_TITLE_XL_ALIGN,
+      )}
     >
       <span className="text-[26px] font-bold leading-none tracking-tight">
         {subsystem.qty} × {subsystem.chassis.name}
@@ -379,7 +394,7 @@ function ChassisHero({
           src={chassisImg}
           alt={subsystem.chassis.name}
           draggable={false}
-          className="h-auto w-[clamp(180px,28vw,300px)] shrink-0 object-contain drop-shadow-lg max-[1200px]:w-[min(260px,72%)]"
+          className="h-auto w-[clamp(140px,22vw,240px)] shrink-0 object-contain drop-shadow-lg max-[1200px]:w-[min(200px,58%)]"
         />
       ) : null}
 
@@ -451,10 +466,16 @@ function EmptyState() {
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 240, opacity: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 26, delay: 0.18 }}
-      className="bg-white/90 px-5 py-6 text-center text-[13px] text-slate-500 ring-1 ring-slate-200"
+      className="pointer-events-none mx-6 border border-dashed border-white/35 bg-white/[0.08] px-5 py-5 text-center text-[12.5px] leading-snug text-white/65 backdrop-blur-[1px]"
+      aria-hidden
     >
-      No serviceable parts in this proposal — switches are sold as a single
-      unit.
+      <span className="block text-[11px] font-medium uppercase tracking-wide text-white/45">
+        No parts in this chassis
+      </span>
+      <span className="mt-1.5 block">
+        No serviceable parts in this proposal — switches are sold as a single
+        unit.
+      </span>
     </motion.div>
   );
 }

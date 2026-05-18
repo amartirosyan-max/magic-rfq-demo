@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useHardwareProject } from "./HardwareProjectContext";
@@ -75,16 +75,22 @@ function BreadcrumbBar() {
    */
   const project = useHardwareProject();
   const activeSubsystem = useActiveSubsystem();
-  const { selectSubsystem, selectUnit } = useSelection();
+  const { resetView, selectSubsystem, selectUnit } = useSelection();
+  const [subsystemMenuOpen, setSubsystemMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!activeSubsystem) setSubsystemMenuOpen(false);
+  }, [activeSubsystem]);
 
   const goToProject = () => {
-    selectUnit(null);
-    selectSubsystem(null);
+    setSubsystemMenuOpen(false);
+    resetView();
   };
 
   const goToSubsystem = (subsystemId: string) => {
     selectUnit(null);
     selectSubsystem(subsystemId);
+    setSubsystemMenuOpen(false);
   };
 
   return (
@@ -107,8 +113,12 @@ function BreadcrumbBar() {
       {activeSubsystem ? (
         <>
           <span className="mx-2 text-slate-300">›</span>
-          <details className="group relative inline-block">
-            <summary className="inline-flex list-none items-center gap-1 text-[13px] font-semibold text-white marker:content-none hover:text-slate-100">
+          <details
+            className="group relative inline-block"
+            open={subsystemMenuOpen}
+            onToggle={(e) => setSubsystemMenuOpen(e.currentTarget.open)}
+          >
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-[13px] font-semibold text-white marker:content-none hover:text-slate-100">
               {activeSubsystem.titleSuffix}
               <ChevronDown className="h-3.5 w-3.5 opacity-80 transition-transform group-open:rotate-180" />
             </summary>

@@ -5,7 +5,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ComponentCategory } from "./types";
 
 /**
  * Hardware demo selection state.
@@ -15,11 +14,14 @@ import type { ComponentCategory } from "./types";
  *   - `selectedRackId`          — driven by clicking a rack on the canvas.
  *   - `selectedUnitId`          — driven by clicking a server/switch inside
  *                                  the selected rack (Screen C detail).
- *   - `selectedCategoryId`      — driven by clicking a component row on
+ *   - `selectedComponentId`     — driven by clicking a component row on
  *                                  Screen C OR a chip in the Catalog tab.
- *                                  Drives the right-sidebar catalog into
- *                                  a category-SKU view + paints a teal
- *                                  ring on the active Screen C row.
+ *                                  Each BoQ row has its own id (e.g. two
+ *                                  "Hard Drive / SSD" lines are distinct);
+ *                                  the catalog drills into that row's
+ *                                  category via a lookup, not by category
+ *                                  alone — otherwise both storage rows
+ *                                  would highlight together.
  *
  * Switching racks always clears the unit selection so we never carry
  * orphaned state across racks. Switching subsystems or units also
@@ -35,8 +37,8 @@ interface SelectionContextValue {
   selectRack: (id: string | null) => void;
   selectedUnitId: string | null;
   selectUnit: (id: string | null) => void;
-  selectedCategoryId: ComponentCategory | null;
-  selectCategory: (id: ComponentCategory | null) => void;
+  selectedComponentId: string | null;
+  selectComponent: (id: string | null) => void;
   /**
    * Clears every selection AND signals "re-centre the canvas view" via a
    * monotonically-increasing `resetViewToken`. Used by the left-sidebar
@@ -56,8 +58,9 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   );
   const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitIdRaw] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] =
-    useState<ComponentCategory | null>(null);
+  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
+    null,
+  );
   const [resetViewToken, setResetViewToken] = useState(0);
 
   /* Picking a different rack (or deselecting) must drop the unit selection
@@ -66,27 +69,27 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const selectRack = useCallback((id: string | null) => {
     setSelectedRackId(id);
     setSelectedUnitIdRaw(null);
-    setSelectedCategoryId(null);
+    setSelectedComponentId(null);
   }, []);
 
   /* A sidebar subsystem pick is meant to deterministically jump to that
-   * subsystem on Screen C; any pre-existing unit / category selection
+   * subsystem on Screen C; any pre-existing unit / component selection
    * would otherwise win the "which subsystem is active?" tiebreaker. */
   const selectSubsystem = useCallback((id: string | null) => {
     setSelectedSubsystemId(id);
     setSelectedUnitIdRaw(null);
-    setSelectedCategoryId(null);
+    setSelectedComponentId(null);
   }, []);
 
-  /* Changing the focused rack unit invalidates any drilled-into category
+  /* Changing the focused rack unit invalidates any drilled-into component
    * (we're now looking at a different chassis). */
   const selectUnit = useCallback((id: string | null) => {
     setSelectedUnitIdRaw(id);
-    setSelectedCategoryId(null);
+    setSelectedComponentId(null);
   }, []);
 
-  const selectCategory = useCallback((id: ComponentCategory | null) => {
-    setSelectedCategoryId(id);
+  const selectComponent = useCallback((id: string | null) => {
+    setSelectedComponentId(id);
   }, []);
 
   /* Hard reset — clears all four selection axes in a single render AND
@@ -96,7 +99,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     setSelectedSubsystemId(null);
     setSelectedRackId(null);
     setSelectedUnitIdRaw(null);
-    setSelectedCategoryId(null);
+    setSelectedComponentId(null);
     setResetViewToken((n) => n + 1);
   }, []);
 
@@ -109,8 +112,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         selectRack,
         selectedUnitId,
         selectUnit,
-        selectedCategoryId,
-        selectCategory,
+        selectedComponentId,
+        selectComponent,
         resetView,
         resetViewToken,
       }}

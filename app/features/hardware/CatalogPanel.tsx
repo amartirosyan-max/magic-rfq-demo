@@ -55,8 +55,12 @@ const COMPONENT_ICON: Record<ComponentCategory, string> = {
 function matchInstalledSku(
   category: ComponentCategory,
   components: HardwareComponent[],
+  /** When set, match against this BoQ row — not the first row in the category. */
+  componentId?: string | null,
 ): string | null {
-  const row = components.find((c) => c.category === category);
+  const row = componentId
+    ? components.find((c) => c.id === componentId)
+    : components.find((c) => c.category === category);
   if (!row) return null;
 
   const flagged = componentCatalog[category].find(
@@ -78,12 +82,39 @@ function matchInstalledSku(
 
 export function CatalogPanel() {
   const scope = useCatalogScope();
+  const { effectiveComponents } = useComponentEdits();
   const {
+    resetView,
     selectSubsystem,
     selectUnit,
-    selectedCategoryId,
-    selectCategory,
+    selectedComponentId,
+    selectComponent,
   } = useSelection();
+
+  /* Drill-in category for the SKU list — derived from the selected BoQ
+   * row, not stored separately, so two storage lines stay independent. */
+  const activeCategory = useMemo((): ComponentCategory | null => {
+    if (!selectedComponentId || scope.kind === "project") return null;
+    const row = effectiveComponents(scope.subsystem).find(
+      (c) => c.id === selectedComponentId,
+    );
+    return row?.category ?? null;
+  }, [selectedComponentId, scope, effectiveComponents]);
+
+  /* Chip row picks the first component in that category (sidebar UX);
+   * Screen C row clicks set `selectedComponentId` directly. */
+  const handlePickCategory = (cat: ComponentCategory) => {
+    if (scope.kind === "project") return;
+    const components = effectiveComponents(scope.subsystem);
+    const inCategory = components.filter((c) => c.category === cat);
+    if (inCategory.length === 0) return;
+    const selected = components.find((c) => c.id === selectedComponentId);
+    if (selected?.category === cat) {
+      selectComponent(null);
+      return;
+    }
+    selectComponent(inCategory[0].id);
+  };
 
   /* Single back-arrow logic, used by the breadcrumb. Walks the navigation
    * one step up:
@@ -92,8 +123,8 @@ export function CatalogPanel() {
    *   subsystem (L1)      → project (L0)
    */
   const onUp = () => {
-    if (selectedCategoryId) {
-      selectCategory(null);
+    if (activeCategory) {
+      selectComponent(null);
       return;
     }
     if (scope.kind === "chassis") {
@@ -101,7 +132,9 @@ export function CatalogPanel() {
       return;
     }
     if (scope.kind === "subsystem") {
-      selectSubsystem(null);
+      /* Back to L0 = rack overview (same as Preview Proposal): drop
+       * rack / subsystem / unit / component and re-centre Screen A. */
+      resetView();
     }
   };
 
@@ -109,7 +142,7 @@ export function CatalogPanel() {
     <div className="flex h-full min-h-0 flex-col">
       <CatalogBreadcrumb
         scope={scope}
-        activeCategory={selectedCategoryId}
+        activeCategory={activeCategory}
         onUp={onUp}
       />
 
@@ -122,30 +155,32 @@ export function CatalogPanel() {
             />
           )}
 
-          {scope.kind !== "project" && selectedCategoryId && (
+          {scope.kind !== "project" && activeCategory && (
             <ComponentCategoryView
-              key={`cat-${selectedCategoryId}-${scope.subsystem.id}`}
-              category={selectedCategoryId}
+              key={`cat-${activeCategory}-${scope.subsystem.id}-${selectedComponentId}`}
+              category={activeCategory}
               subsystem={scope.subsystem}
+              selectedComponentId={selectedComponentId}
               installedId={matchInstalledSku(
-                selectedCategoryId,
+                activeCategory,
                 scope.subsystem.components,
+                selectedComponentId,
               )}
             />
           )}
 
-          {scope.kind === "subsystem" && !selectedCategoryId && (
+          {scope.kind === "subsystem" && !activeCategory && (
             <SubsystemCatalog
               key={`subsystem-${scope.subsystem.id}`}
               scope={scope}
             />
           )}
 
-          {scope.kind === "chassis" && !selectedCategoryId && (
+          {scope.kind === "chassis" && !activeCategory && (
             <ChassisOverview
               key={`chassis-${scope.subsystem.id}`}
               scope={scope}
-              onPickCategory={selectCategory}
+              onPickCategory={handlePickCategory}
             />
           )}
         </AnimatePresence>
@@ -730,10 +765,12 @@ function ChassisOverview({
 function ComponentCategoryView({
   category,
   subsystem,
+  selectedComponentId,
   installedId,
 }: {
   category: ComponentCategory;
   subsystem: Subsystem;
+  selectedComponentId: string | null;
   installedId: string | null;
 }) {
   const list = componentCatalog[category];
@@ -746,12 +783,19 @@ function ComponentCategoryView({
     isDeleted,
   } = useComponentEdits();
 
-  /* Find the matching component row in the chassis (static BoQ has at
-   * most one row per category). We look it up in the *unedited* list so
-   * we can also surface deleted rows with a "Restore" action. */
+  /* The BoQ row the user clicked on Screen C — may be the 2nd storage
+   * line, 2nd network line, etc. Fall back to the first row in the
+   * category only when no component id is pinned (shouldn't happen in
+   * normal flow). We look up in the *unedited* list so deleted rows can
+   * still be restored. */
   const installedRow = useMemo<HardwareComponent | null>(() => {
+    if (selectedComponentId) {
+      return (
+        subsystem.components.find((c) => c.id === selectedComponentId) ?? null
+      );
+    }
     return subsystem.components.find((c) => c.category === category) ?? null;
-  }, [subsystem.components, category]);
+  }, [subsystem.components, category, selectedComponentId]);
 
   /* Apply overlays to get the live qty + description for the row. */
   const liveRow = useMemo<HardwareComponent | null>(() => {

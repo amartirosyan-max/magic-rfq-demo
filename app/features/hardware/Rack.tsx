@@ -8,6 +8,11 @@ import type { Rack as RackType, RackUnit } from "./types";
 import rackFrameUrl from "~/assets/hardware/verstka/Server_BG.png";
 /* Shared filename → URL map for every chassis image used by the demo. */
 import { CHASSIS_IMAGE_URLS } from "~/features/hardware/chassis-assets";
+import {
+  hardwareSpring,
+  RACK_SCALE_FLANK,
+  RACK_SCALE_SELECTED,
+} from "./motion";
 
 /**
  * Aspect ratio + inset constants are derived from the actual `Server_BG.png`
@@ -107,7 +112,11 @@ export function Rack({ rack, columnLabel }: RackProps) {
    *   • non-selected racks → 0.75 + 50% opacity (carousel flanks)
    *   • empty racks       → always 70% opacity in overview mode
    */
-  const baseScale = isSelected ? 1.15 : isOther ? 0.75 : 1;
+  const baseScale = isSelected
+    ? RACK_SCALE_SELECTED
+    : isOther
+      ? RACK_SCALE_FLANK
+      : 1;
   const baseOpacity = isOther ? 0.45 : rack.isEmpty && !hasSelection ? 0.7 : 1;
 
   const isClickable = !rack.isEmpty;
@@ -162,7 +171,7 @@ export function Rack({ rack, columnLabel }: RackProps) {
       whileHover={
         isClickable && !isSelected ? { scale: baseScale * 1.04 } : undefined
       }
-      transition={{ type: "spring", stiffness: 220, damping: 24 }}
+      transition={hardwareSpring}
       className={cn(
         "relative h-full",
         isClickable ? "cursor-pointer" : "cursor-default",
