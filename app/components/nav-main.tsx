@@ -87,7 +87,7 @@ function NavMenuItem({
         </div>
         {hasChildren && (
           <CollapsibleContent className="w-full min-w-0">
-            <SidebarMenuSub className="w-full min-w-0 translate-x-0 border-0 pl-0 pr-0">
+            <SidebarMenuSub className="w-full min-w-0 translate-x-0 border-0 pl-2 pr-0">
               {item.items.map((subItem) => (
                 <SidebarMenuSubItem key={subItem.title}>
                   {subItem.items.length > 0 ? (

@@ -7,7 +7,6 @@ import { DiagramProvider } from "~/context/DiagramContext";
 import formatToUSD from "~/utils/formatUSD";
 import { CatalogPanel } from "./CatalogPanel";
 import { ComponentEditsProvider } from "./ComponentEditsProvider";
-import { HardwareLogo } from "./HardwareLogo";
 import {
   getFakeNavItems,
   getFakeProject,
@@ -126,7 +125,6 @@ function HardwareLayoutInner({ children }: { children: ReactNode }) {
             navItems={navItems}
             projectPriceData={projectPriceData}
             className="h-full border-r-0 p-4"
-            topSlot={<HardwareLogo />}
             disableHeaderClick
             onPreviewProposalClick={() => {
               /* "Proposal preview" = rack overview: no rack / unit / subsystem
