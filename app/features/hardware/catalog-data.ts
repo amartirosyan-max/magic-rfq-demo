@@ -968,6 +968,59 @@ const power: CatalogEntry[] = [
   },
 ];
 
+const gpu: CatalogEntry[] = [
+  {
+    id: "gpu-h200-sxm5",
+    name: "NVIDIA H200 SXM5",
+    status: "in-proposal",
+    bestFor: "Current ADGSA baseline",
+    spec: "141GB HBM3e · 4.8 TB/s · 700W · NVLink 4.0 + PCIe 5.0",
+    description:
+      "RFP-specified accelerator used in the current XE9680 proposal build. Same Hopper compute class as H100 SXM5 but with significantly higher memory capacity and bandwidth for large-model training and memory-bound inference.",
+    price: "$30,000-$40,000",
+  },
+  {
+    id: "gpu-h100-sxm5",
+    name: "NVIDIA H100 SXM5",
+    status: "not-in-proposal",
+    bestFor: "Cost-down Hopper option",
+    spec: "80GB HBM3 · 3.35 TB/s · 700W · NVLink 4.0 + PCIe 5.0",
+    description:
+      "Proven Hopper SXM option for large-scale training clusters. Lower memory and memory bandwidth than H200, but a strong budget alternative when model footprints fit within 80GB.",
+    price: "$25,000-$30,000",
+  },
+  {
+    id: "gpu-b200-sxm-air",
+    name: "NVIDIA B200 SXM (Air)",
+    status: "not-in-proposal",
+    bestFor: "Next-gen Blackwell upgrade",
+    spec: "192GB HBM3e · 8.0 TB/s · 1000W · NVLink 5.0 + PCIe 5.0",
+    description:
+      "Air-cooled Blackwell successor with materially higher throughput and memory capacity versus H200. Suitable for future-ready training clusters where rack power and thermal envelopes can support higher TDP GPUs.",
+    price: "$40,000-$50,000",
+  },
+  {
+    id: "gpu-mi300x",
+    name: "AMD Instinct MI300X",
+    status: "not-in-proposal",
+    bestFor: "High-memory non-NVIDIA path",
+    spec: "192GB HBM3 · 5.3 TB/s · 750W · Infinity Fabric + PCIe 5.0",
+    description:
+      "High-memory CDNA 3 accelerator with strong memory bandwidth and competitive price point. Useful for teams standardizing on ROCm stacks or diversifying supply away from NVIDIA.",
+    price: "$15,000-$20,000",
+  },
+  {
+    id: "gpu-mi350x",
+    name: "AMD Instinct MI350X",
+    status: "not-in-proposal",
+    bestFor: "Ultra-memory AMD next-gen",
+    spec: "288GB HBM3e · 8.0 TB/s · ~1000W · Infinity Fabric + PCIe 5.0",
+    description:
+      "CDNA 4 upgrade path with very large on-package memory and high bandwidth. Strong candidate for memory-heavy LLM workloads where GPU memory footprint is the primary constraint.",
+    price: "$25,000-$30,000",
+  },
+];
+
 /* -------------------------------------------------------------------------- */
 /*  Per-category component catalog                                             */
 /* -------------------------------------------------------------------------- */
@@ -978,7 +1031,7 @@ export const componentCatalog: Record<ComponentCategory, CatalogEntry[]> = {
   storage,
   network,
   power,
-  gpu: [],
+  gpu,
 };
 
 export const componentCategoryLabel: Record<ComponentCategory, string> = {
