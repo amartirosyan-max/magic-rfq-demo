@@ -35,7 +35,7 @@
  */
 
 import bgBlueJpg from "~/assets/hardware/PNG+SVG/BG_Blue.jpg";
-import gridTilePng from "~/assets/hardware/PNG+SVG/BG_Blue_Grid_Tile_2.png";
+import gridTileSvg from "~/assets/hardware/PNG+SVG/Grid.svg?no-inline";
 import logoMarkSvg from "~/assets/hardware/verstka/Logo.svg";
 import logoTextSvg from "~/assets/hardware/verstka/Logo_text.svg";
 import rackFramePng from "~/assets/hardware/verstka/Server_BG.png";
@@ -69,6 +69,7 @@ import componentRamPng from "~/assets/hardware/PNG+SVG/Component_RAM.png";
 import componentAccessoriesV2 from "~/assets/hardware/Components_v2_PNG/Accessories.png";
 import componentCpuV2 from "~/assets/hardware/Components_v2_PNG/CPU.png";
 import componentCoolerV2 from "~/assets/hardware/Components_v2_PNG/Cooler.png";
+import componentDpuV2 from "~/assets/hardware/Components_v2_PNG/DPU.png";
 import componentFibreCableV2 from "~/assets/hardware/Components_v2_PNG/Fibre_cable.png";
 import componentGpuV2 from "~/assets/hardware/Components_v2_PNG/GPU.png";
 import componentHardDiskV2 from "~/assets/hardware/Components_v2_PNG/Hard_Disk.png";
@@ -94,7 +95,7 @@ const critical: PreloadAsset[] = [
    * Dr. Artemy's 2026-05-13 design comment) — biggest visible surface
    * on first paint, so it leads the high-priority list. */
   { href: bgBlueJpg, type: "image/jpeg", priority: "high" },
-  { href: gridTilePng, type: "image/png", priority: "high" },
+  { href: gridTileSvg, type: "image/svg+xml", priority: "high" },
   { href: rackFramePng, type: "image/png", priority: "high" },
   /* Avaya chassis */
   { href: productR660, type: "image/png", priority: "high" },
@@ -119,6 +120,7 @@ const deferred: PreloadAsset[] = [
   { href: componentAccessoriesV2, type: "image/png", priority: "auto" },
   { href: componentCpuV2, type: "image/png", priority: "auto" },
   { href: componentCoolerV2, type: "image/png", priority: "auto" },
+  { href: componentDpuV2, type: "image/png", priority: "auto" },
   { href: componentFibreCableV2, type: "image/png", priority: "auto" },
   { href: componentGpuV2, type: "image/png", priority: "auto" },
   { href: componentHardDiskV2, type: "image/png", priority: "auto" },

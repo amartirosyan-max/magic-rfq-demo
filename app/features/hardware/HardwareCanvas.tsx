@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import bgBlueUrl from "~/assets/hardware/PNG+SVG/BG_Blue.jpg";
-import gridTileUrl from "~/assets/hardware/PNG+SVG/BG_Blue_Grid_Tile_2.png";
+import gridTileUrl from "~/assets/hardware/PNG+SVG/Grid.svg?no-inline";
 import { ScreenA } from "./ScreenA";
 import { ScreenC } from "./ScreenC";
 import { TopChrome } from "./TopChrome";
@@ -34,9 +34,11 @@ import { useActiveSubsystem } from "./useActiveSubsystem";
  *     gradient with a soft radial highlight near center-bottom. Stays
  *     fixed (no zoom) so the gradient's focal point doesn't drift when
  *     the user dives into a rack.
- *   - Grid layer: `BG_Blue_Grid_Tile_2.png` tiled at 72 px on top of the
- *     base. This is the only layer that scales on dive — keeps the
- *     "step closer" cue without distorting the gradient.
+ *   - Grid layer: `Grid.svg` tiled at 120 px on top of the base.
+ *     The layer uses a single SVG pattern (no stacked fallback overlays)
+ *     so lines stay crisp and avoid moire/ghosting artifacts.
+ *     This is the only layer that scales on dive — keeps the "step
+ *     closer" cue without distorting the gradient.
  */
 export function HardwareCanvas() {
   const {
@@ -78,22 +80,18 @@ export function HardwareCanvas() {
       {/* Tiled grid texture over the blue canvas.
        *
        * Visual goals:
-       *   - More grid cells per screen than the native 122px tile would
-       *     give — we render it at ~72px so the grid reads denser and
-       *     the cell lines feel a touch thicker.
-       *   - Slightly bolder than before (opacity 0.65 vs 0.50) so the
-       *     blueprint character is more present without overpowering the
-       *     rack contents.
+       *   - Use one SVG tile only (no extra gradient overlay) so the
+       *     grid reads clean, straight and stable at every zoom.
        *   - Rack focus uses the same 1.15× scale and spring as the
        *     selected rack; Screen C uses a stronger 1.8× zoom. Only the
        *     grid layer scales; the BG_Blue gradient stays fixed. */}
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute inset-0 origin-center bg-repeat opacity-65"
+        className="pointer-events-none absolute inset-0 origin-center bg-repeat opacity-60"
         style={{
           backgroundImage: `url(${gridTileUrl})`,
           backgroundPosition: "center",
-          backgroundSize: "72px 72px",
+          backgroundSize: "120px 120px",
         }}
         animate={{ scale: gridScale }}
         transition={hardwareSpring}
