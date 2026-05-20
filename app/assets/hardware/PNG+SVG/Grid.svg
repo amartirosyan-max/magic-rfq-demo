@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">
+  <g shape-rendering="crispEdges">
+    <!-- Outer borders / major frame (clear but still subtle) -->
+    <path d="M0.5 0V120 M119.5 0V120 M0 0.5H120 M0 119.5H120" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.34"/>
+
+    <!-- Major split: 2x2 -->
+    <path d="M60.5 0V120 M0 60.5H120" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.2"/>
+
+    <!-- Minor grid every 15px inside each half (lighter than major/borders) -->
+    <path d="M15.5 0V120 M30.5 0V120 M45.5 0V120 M75.5 0V120 M90.5 0V120 M105.5 0V120 M0 15.5H120 M0 30.5H120 M0 45.5H120 M0 75.5H120 M0 90.5H120 M0 105.5H120" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.1"/>
+  </g>
+</svg>
