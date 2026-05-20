@@ -26,6 +26,7 @@ import { CHASSIS_IMAGE_URLS } from "~/features/hardware/chassis-assets";
  * production builds. String paths like `/app/assets/...` are not emitted
  * to `dist` and always 404 after `npm run build`. */
 import componentCpuV2 from "~/assets/hardware/Components_v2_PNG/CPU.png";
+import componentDpuV2 from "~/assets/hardware/Components_v2_PNG/DPU.png";
 import componentGpuV2 from "~/assets/hardware/Components_v2_PNG/GPU.png";
 import componentStorageV2 from "~/assets/hardware/Components_v2_PNG/Hard_Disk.png";
 import componentStorageM2V2 from "~/assets/hardware/Components_v2_PNG/M2_Drive.png";
@@ -298,6 +299,7 @@ function ComponentCard({
         )}
       >
         <ComponentIcon
+          component={component}
           category={component.category}
           fallbackIcon={Icon}
           alt={component.categoryLabel}
@@ -341,15 +343,17 @@ function ComponentCard({
 }
 
 function ComponentIcon({
+  component,
   category,
   fallbackIcon: FallbackIcon,
   alt,
 }: {
+  component: HardwareComponent;
   category: ComponentCategory;
   fallbackIcon: LucideIcon;
   alt: string;
 }) {
-  const candidates = CATEGORY_ICON_URLS[category];
+  const candidates = resolveIconCandidates(component, category);
   const [idx, setIdx] = useState(0);
   const [useFallback, setUseFallback] = useState(false);
 
@@ -376,6 +380,32 @@ function ComponentIcon({
       }}
     />
   );
+}
+
+function resolveIconCandidates(
+  component: HardwareComponent,
+  category: ComponentCategory,
+): readonly string[] {
+  const label = component.categoryLabel.toLowerCase();
+  const description = component.description.toLowerCase();
+  const rowText = `${label} ${description}`;
+
+  // Network rows that represent a DPU should render the dedicated DPU asset.
+  if (category === "network" && /\bdpu\b/.test(rowText)) {
+    return [componentDpuV2, ...CATEGORY_ICON_URLS.network];
+  }
+
+  // Storage rows for BOSS-N1 / M.2 boot devices should prefer the M.2 icon.
+  if (
+    category === "storage" &&
+    (/\bm\.?2\b/.test(rowText) ||
+      rowText.includes("boss-n1") ||
+      rowText.includes("nvme raid"))
+  ) {
+    return [componentStorageM2V2, ...CATEGORY_ICON_URLS.storage];
+  }
+
+  return CATEGORY_ICON_URLS[category];
 }
 
 /* -------------------------------------------------------------------------- */
