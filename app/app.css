@@ -245,6 +245,17 @@ body {
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Rack-constructor geometry tokens. Mirror of the TS constants in
+   * `app/features/hardware/config.ts`. Brand themes
+   * (`:root[data-customer="..."]`) can override these to retint or
+   * resize racks without TS edits. */
+  --rack-width: 194px;
+  --rack-top-h: 19px;
+  --rack-bottom-h: 37px;
+  --rack-margin-x: 20px;
+  --rack-unit-h: 11px;
+  --rack-side-rail-w: 12px;
 }
 
 .dark {

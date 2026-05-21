@@ -97,13 +97,33 @@ export interface RackUnit {
   sizeU: number;
 }
 
+/**
+ * Discriminator used by the rack constructor to pick a render variant.
+ *
+ *   - `rack-42u` / `rack-21u` / `rack-12u`  → render with `RackFrame`
+ *     (top SVG + N × unit slot + bottom SVG). `heightU` MUST match the
+ *     numeric suffix.
+ *   - `standalone`                          → render with `StandaloneNode`,
+ *     no rack frame at all. `heightU` is ignored (use 0 or the chassis sizeU).
+ *
+ * The constructor accepts any kind without code changes — adding a new
+ * fixed size (e.g. `"rack-24u"`) is a one-line addition here plus its
+ * `heightU` value in the data.
+ */
+export type RackKind = "rack-42u" | "rack-21u" | "rack-12u" | "standalone";
+
 export interface Rack {
   id: string;
   /** Long name shown on Screen B title, e.g. "Infrastructure Rack 01" */
   name: string;
   /** Short label shown above the rack column on Screen A */
   shortLabel: string;
-  /** Total rack height — 42 for v1 */
+  /**
+   * Render variant. Discriminates between framed racks (42U / 21U / 12U)
+   * and frameless `standalone` chassis groups. See `RackKind`.
+   */
+  kind: RackKind;
+  /** Total rack height in U (ignored when `kind === "standalone"`). */
   heightU: number;
   /** Physical units placed in the rack (empty for flanking racks) */
   units: RackUnit[];

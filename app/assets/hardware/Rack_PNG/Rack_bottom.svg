@@ -1,0 +1,44 @@
+<svg id="Bottom" xmlns="http://www.w3.org/2000/svg" width="254" height="48.438" viewBox="0 0 254 48.438">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+        fill-opacity: 0.55;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        stroke: #fff;
+        stroke-width: 1px;
+      }
+
+      .cls-1, .cls-2 {
+        fill-rule: evenodd;
+      }
+
+      .cls-2, .cls-3 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <g id="_1" data-name="1">
+    <path class="cls-1" d="M54,946H303a2,2,0,0,1,2,2v19a2,2,0,0,1-2,2H54a2,2,0,0,1-2-2V948A2,2,0,0,1,54,946Z" transform="translate(-51.5 -945.5)"/>
+    <path id="Rectangle_1_copy" data-name="Rectangle 1 copy" class="cls-2" d="M54.533,946.5H70.467a2,2,0,0,1,2,2v19a2,2,0,0,1-2,2H54.533a2,2,0,0,1-2-2v-19A2,2,0,0,1,54.533,946.5Z" transform="translate(-51.5 -945.5)"/>
+    <path id="Rectangle_1_copy_2" data-name="Rectangle 1 copy 2" class="cls-2" d="M286.533,946.5h15.934a2,2,0,0,1,2,2v19a2,2,0,0,1-2,2H286.533a2,2,0,0,1-2-2v-19A2,2,0,0,1,286.533,946.5Z" transform="translate(-51.5 -945.5)"/>
+    <circle class="cls-3" cx="11" cy="12" r="3.5"/>
+    <circle id="Ellipse_1_copy" data-name="Ellipse 1 copy" class="cls-3" cx="11" cy="12" r="0.938"/>
+    <circle id="Ellipse_1_copy_2" data-name="Ellipse 1 copy 2" class="cls-3" cx="243" cy="12" r="3.5"/>
+    <circle id="Ellipse_1_copy_2-2" data-name="Ellipse 1 copy 2" class="cls-3" cx="243" cy="12" r="0.938"/>
+  </g>
+  <g id="Left_leg">
+    <path class="cls-2" d="M54.483,988.493H76.517a2,2,0,0,1,2,2v0.931a2,2,0,0,1-2,2H54.483a2,2,0,0,1-2-2v-0.931A2,2,0,0,1,54.483,988.493Z" transform="translate(-51.5 -945.5)"/>
+    <path id="Rectangle_2_copy" data-name="Rectangle 2 copy" class="cls-2" d="M56.717,969.5H86.283a1,1,0,0,1,1,1v3a1,1,0,0,1-1,1H56.717a1,1,0,0,1-1-1v-3A1,1,0,0,1,56.717,969.5Z" transform="translate(-51.5 -945.5)"/>
+    <path class="cls-2" d="M58,988s5-2.064,5-6v-7" transform="translate(-51.5 -945.5)"/>
+    <path id="Shape_1_copy" data-name="Shape 1 copy" class="cls-2" d="M74,988s-5-2.064-5-6v-7" transform="translate(-51.5 -945.5)"/>
+  </g>
+  <g id="Left_leg_copy" data-name="Left_leg copy">
+    <path class="cls-2" d="M301.517,988.493H279.483a2,2,0,0,0-2,2v0.931a2,2,0,0,0,2,2h22.034a2,2,0,0,0,2-2v-0.931A2,2,0,0,0,301.517,988.493Z" transform="translate(-51.5 -945.5)"/>
+    <path id="Rectangle_2_copy-2" data-name="Rectangle 2 copy" class="cls-2" d="M299.283,969.5H269.717a1,1,0,0,0-1,1v3a1,1,0,0,0,1,1h29.566a1,1,0,0,0,1-1v-3A1,1,0,0,0,299.283,969.5Z" transform="translate(-51.5 -945.5)"/>
+    <path class="cls-2" d="M298,988s-5-2.064-5-6v-7" transform="translate(-51.5 -945.5)"/>
+    <path id="Shape_1_copy-2" data-name="Shape 1 copy" class="cls-2" d="M282,988s5-2.064,5-6v-7" transform="translate(-51.5 -945.5)"/>
+  </g>
+</svg>

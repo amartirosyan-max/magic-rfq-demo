@@ -3,22 +3,24 @@ import { motion } from "framer-motion";
 import { useHardwareProject } from "./HardwareProjectContext";
 import { Rack } from "./Rack";
 import { useSelection } from "./SelectionContext";
+import { RACK_MARGIN_X_PX, RACK_WIDTH_PX } from "./config";
 
 /**
- * Scroll-pad on each side of the rack row, expressed in CSS so it tracks
- * the viewport without JS.
+ * Scroll-pad on each side of the rack row.
  *
  *   pad = 50% (canvas) − rack-half − rack-margin
- *       = 50% − (55vh × 342/912)/2 − 20 px
- *       = 50% − 10.3125 vh − 20 px
  *
- * The 50% resolves against the row's containing block (the canvas), so
- * at scrollLeft = 0 the first rack's centre lands exactly on the canvas
- * centre, and at scrollLeft = max the last rack's centre does too —
- * *and no further*.  `max(0px, …)` clamps away from negative values on
- * very narrow canvases.
+ * Derived from the rack-constructor tokens (`RACK_WIDTH_PX`,
+ * `RACK_MARGIN_X_PX`) so this stays in sync when the rack is retuned
+ * via `config.ts`. The 50% resolves against the row's containing block
+ * (the canvas), so at `scrollLeft = 0` the first rack's centre lands
+ * exactly on the canvas centre, and at `scrollLeft = max` the last
+ * rack's centre does too — *and no further*. `max(0px, …)` clamps
+ * away from negative values on very narrow canvases.
  */
-const SCROLL_PAD = "max(0px, calc(50% - 10.3125vh - 20px))";
+const SCROLL_PAD = `max(0px, calc(50% - ${
+  RACK_WIDTH_PX / 2 + RACK_MARGIN_X_PX
+}px))`;
 
 /**
  * Screen A — multi-rack overview.
@@ -218,7 +220,7 @@ export function ScreenA() {
       onClick={() => {
         if (hasSelection) selectRack(null);
       }}
-      className="relative flex flex-1 items-center overflow-x-auto overflow-y-hidden pb-12 pt-28 scrollbar-none"
+      className="relative flex flex-1 items-center overflow-x-auto overflow-y-hidden pb-12 pt-32 scrollbar-none"
     >
       {/* Equal-width rack slots via `mx-5` on each rack — slot =
           rackWidth + 40 px.  In FITS mode the carousel pill above is

@@ -5,7 +5,6 @@ import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
 import type { Rack as RackType, RackUnit } from "./types";
-import rackFrameUrl from "~/assets/hardware/verstka/Server_BG.png";
 /* Shared filename → URL map for every chassis image used by the demo. */
 import { CHASSIS_IMAGE_URLS } from "~/features/hardware/chassis-assets";
 import {
@@ -13,60 +12,27 @@ import {
   RACK_SCALE_FLANK,
   RACK_SCALE_SELECTED,
 } from "./motion";
-
-/**
- * Aspect ratio + inset constants are derived from the actual `Server_BG.png`
- * file (342×912 px). The constants below describe the interior slot region
- * inside the rack frame — the bounding box where rack units actually live:
- *
- *   ┌──────────────────┐   ◀── 342 px wide
- *   │   ╭──top cap──╮  │   ◀──  40 px top cap (≈ 4.4 %)
- *   │   │  42 U …   │  │
- *   │   │  …        │  │   ◀── 825 px usable interior (42 U slots)
- *   │   │  …  1 U   │  │
- *   │   ╰──feet─────╯  │   ◀──  47 px bottom feet (≈ 5.2 %)
- *   └──────────────────┘
- *      ▲             ▲
- *   22 px         22 px  ◀── side rails (≈ 6.5 %)
- *
- * The unit overlay box (`<div>` below) is sized to that interior, and every
- * rack unit `<img>` inside it stretches the full width (`left-0 right-0` +
- * `object-fill`) — 1 U = (100 / heightU) % of the inner box height.
- */
-const RACK_ASPECT = "342 / 912";
-const TOP_INSET_PCT = 4.4;
-const BOTTOM_INSET_PCT = 7.2;
-const LEFT_SIDE_INSET_PCT = 18.5;
-const RIGHT_SIDE_INSET_PCT = 19.8;
+import { RackFrame, RackNode, StandaloneNode } from "./rack-constructor";
 
 /* ============================================================
  *  RACK UNIT — HOVER STYLES   ← edit these to tweak the look
  * ------------------------------------------------------------
  *  Hover visuals for a unit *inside an already-selected rack*.
  *
- *  Implementation note: the "outline" is rendered as a thin
- *  coloured plate BEHIND the unit image, so each side can have
- *  its own thickness (different on left/right vs top/bottom).
- *  A uniform CSS `outline` / `ring` can't do that.
+ *  The hover frame is an outer border that sits on top and scales
+ *  with the chassis so it stays visible when UNIT_HOVER_SCALE bumps.
+ *  Negative inset values make the frame stick out past the slot edges.
  *
- *    UNIT_HOVER_RING_INSET_X – how far the plate sticks out on
- *                              the LEFT and RIGHT sides
- *                              (`-inset-x-[Npx]` — bigger N =
- *                              thicker horizontal stroke).
- *    UNIT_HOVER_RING_INSET_Y – how far it sticks out on TOP and
- *                              BOTTOM (`-inset-y-[Npx]`).
- *    UNIT_HOVER_RING_RADIUS  – corner radius on the plate.
- *    UNIT_HOVER_RING_COLOR   – plate colour (any Tailwind `bg-*`
- *                              utility, e.g. `bg-white`,
- *                              `bg-sky-400`, …).
- *    UNIT_HOVER_SCALE        – framer-motion scale multiplier
- *                              for the smooth hover bump
- *                              (set to `1` to disable the bump).
+ *    UNIT_HOVER_RING_INSET_X – horizontal stick-out (-inset-x-[Npx])
+ *    UNIT_HOVER_RING_INSET_Y – top/bottom stick-out (-inset-y-[Npx])
+ *    UNIT_HOVER_RING_RADIUS  – corner radius on the ring
+ *    UNIT_HOVER_RING_BORDER  – Tailwind border classes for the ring
+ *    UNIT_HOVER_SCALE        – scale multiplier (1 = no bump)
  * ============================================================ */
 const UNIT_HOVER_RING_INSET_X = "-inset-x-[5px]";
 const UNIT_HOVER_RING_INSET_Y = "-inset-y-[2px]";
 const UNIT_HOVER_RING_RADIUS = "rounded-[5px]";
-const UNIT_HOVER_RING_COLOR = "bg-white";
+const UNIT_HOVER_RING_BORDER = "border-2 border-white";
 const UNIT_HOVER_SCALE = 1.08;
 
 export interface RackColumnLabel {
@@ -152,8 +118,6 @@ export function Rack({ rack, columnLabel }: RackProps) {
     unitId: string,
     subsystemId: string,
   ) => {
-    // Only meaningful inside a selected rack; otherwise let the click
-    // bubble up so the rack itself gets selected first.
     if (!isSelected) return;
     e.stopPropagation();
     const nextUnit = selectedUnitId === unitId ? null : unitId;
@@ -173,10 +137,9 @@ export function Rack({ rack, columnLabel }: RackProps) {
       }
       transition={hardwareSpring}
       className={cn(
-        "relative h-full",
+        "relative",
         isClickable ? "cursor-pointer" : "cursor-default",
       )}
-      style={{ aspectRatio: RACK_ASPECT }}
     >
       {/* Title — absolutely positioned above the rack frame and inside the
           scaled motion.div so it tracks the rack's visual top at every
@@ -197,91 +160,101 @@ export function Rack({ rack, columnLabel }: RackProps) {
         </div>
       ) : null}
 
-      <img
-        src={rackFrameUrl}
-        alt={rack.isEmpty ? "Empty rack" : rack.name}
-        className="absolute inset-0 h-full w-full object-fill"
-        draggable={false}
-      />
+      {rack.kind === "standalone"
+        ? renderStandalone()
+        : renderFramedRack()}
+    </motion.div>
+  );
 
-      {/* Interior slot region — sized to the actual usable inside of the
-          rack frame. Each unit is positioned ABSOLUTELY by its `positionU`
-          inside this box, so `positionU` in `fake-data.ts` is the single
-          source of truth for vertical placement. The interior holds
-          `rack.heightU` slots (42 for v1); 1 U = (100 / heightU)%.
-          U-numbering convention: U1 = bottom-most slot, U42 = top-most. */}
-      <div
-        className="absolute"
-        style={{
-          top: `${TOP_INSET_PCT}%`,
-          bottom: `${BOTTOM_INSET_PCT}%`,
-          left: `${LEFT_SIDE_INSET_PCT}%`,
-          right: `${RIGHT_SIDE_INSET_PCT}%`,
-        }}
-      >
+  /**
+   * Framed-rack body: top SVG + N × slot + bottom SVG, with each unit
+   * absolute-positioned by `(positionU, sizeU)`. Empty/decorative racks
+   * still hit this path — they just render no `<RackNode>` children.
+   */
+  function renderFramedRack() {
+    return (
+      <RackFrame heightU={rack.heightU}>
         {visibleUnits.map((unit) => {
           const subsystem = project.subsystems.find(
             (s) => s.id === unit.subsystemId,
           );
           if (!subsystem) return null;
-
-          const image = CHASSIS_IMAGE_URLS[subsystem.chassis.image];
-
-          /* Convert (positionU, sizeU) → CSS top/height percentages of the
-           * interior box. A `sizeU`-tall unit anchored at the bottom edge
-           * of U=`positionU` occupies U=positionU .. U=positionU+sizeU-1. */
-          const topU = unit.positionU + unit.sizeU - 1;
-          const topPct = ((rack.heightU - topU) / rack.heightU) * 100;
-          const heightPct = (unit.sizeU / rack.heightU) * 100;
-
-          /* Hover visuals (ring + scale) are only enabled when the parent
-           * rack is selected — otherwise the racks are too small in
-           * carousel view for per-unit hover feedback to read well. Click
-           * still updates `selectedUnitId` in the context (drives Screen
-           * C / detail). The wrapper is `group` so the inner ring plate
-           * listens to `group-hover:` and fades in. */
           return (
-            <motion.div
+            <RackNode
               key={unit.id}
-              onClick={(e) => handleUnitClick(e, unit.id, unit.subsystemId)}
-              whileHover={
-                isSelected ? { scale: UNIT_HOVER_SCALE } : undefined
-              }
-              transition={{ type: "spring", stiffness: 300, damping: 22 }}
-              style={{
-                top: `${topPct}%`,
-                height: `${heightPct}%`,
-              }}
-              className={cn(
-                "group absolute left-0 right-0 origin-center",
-                isSelected && "cursor-pointer hover:z-10",
-              )}
+              positionU={unit.positionU}
+              sizeU={unit.sizeU}
+              heightU={rack.heightU}
             >
-              {/* Hover "ring" — coloured plate behind the image. Edit the
-                  UNIT_HOVER_RING_* constants near the top of this file. */}
-              {isSelected ? (
-                <span
-                  aria-hidden
-                  className={cn(
-                    "pointer-events-none absolute opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100",
-                    UNIT_HOVER_RING_INSET_X,
-                    UNIT_HOVER_RING_INSET_Y,
-                    UNIT_HOVER_RING_RADIUS,
-                    UNIT_HOVER_RING_COLOR,
-                  )}
-                />
-              ) : null}
+              {renderUnitBody(unit, subsystem.chassis.image, subsystem.chassis.name)}
+            </RackNode>
+          );
+        })}
+      </RackFrame>
+    );
+  }
 
-              <img
-                src={image}
-                alt={subsystem.chassis.name}
-                draggable={false}
-                className="relative block h-full w-full object-fill"
-              />
-            </motion.div>
+  /**
+   * Standalone-rack body: a single bare chassis at its own intrinsic
+   * size, no frame, no rails. Multiple units in a standalone rack
+   * stack vertically in the order they appear in `visibleUnits` — the
+   * primary use case is exactly one solo node, but the implementation
+   * doesn't enforce a hard cardinality.
+   */
+  function renderStandalone() {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        {visibleUnits.map((unit) => {
+          const subsystem = project.subsystems.find(
+            (s) => s.id === unit.subsystemId,
+          );
+          if (!subsystem) return null;
+          return (
+            <StandaloneNode key={unit.id} sizeU={unit.sizeU}>
+              {renderUnitBody(unit, subsystem.chassis.image, subsystem.chassis.name)}
+            </StandaloneNode>
           );
         })}
       </div>
-    </motion.div>
-  );
+    );
+  }
+
+  /**
+   * Inner click/hover/image body shared by framed and standalone racks.
+   * Kept identical across paths so the hover-ring + selection-bump
+   * tokens at the top of this file apply uniformly.
+   */
+  function renderUnitBody(unit: RackUnit, imageKey: string, alt: string) {
+    const image = CHASSIS_IMAGE_URLS[imageKey];
+    return (
+      <motion.div
+        onClick={(e) => handleUnitClick(e, unit.id, unit.subsystemId)}
+        whileHover={isSelected ? { scale: UNIT_HOVER_SCALE } : undefined}
+        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+        className={cn(
+          "group relative h-full w-full origin-center",
+          isSelected && "cursor-pointer hover:z-10",
+        )}
+      >
+        <img
+          src={image}
+          alt={alt}
+          draggable={false}
+          className="relative z-0 block h-full w-full object-fill"
+        />
+        {isSelected ? (
+          <span
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute z-10 box-border bg-transparent opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100",
+              UNIT_HOVER_RING_INSET_X,
+              UNIT_HOVER_RING_INSET_Y,
+              UNIT_HOVER_RING_RADIUS,
+              UNIT_HOVER_RING_BORDER,
+            )}
+          />
+        ) : null}
+      </motion.div>
+    );
+  }
 }

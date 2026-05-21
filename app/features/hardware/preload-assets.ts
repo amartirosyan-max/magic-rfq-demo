@@ -38,7 +38,9 @@ import bgBlueJpg from "~/assets/hardware/PNG+SVG/BG_Blue.jpg";
 import gridTileSvg from "~/assets/hardware/PNG+SVG/Grid.svg?no-inline";
 import logoMarkSvg from "~/assets/hardware/verstka/Logo.svg";
 import logoTextSvg from "~/assets/hardware/verstka/Logo_text.svg";
-import rackFramePng from "~/assets/hardware/verstka/Server_BG.png";
+/* Rack-constructor frame parts — top band + bottom plate. */
+import rackTopSvg from "~/assets/hardware/Rack_PNG/Rack_Top.svg";
+import rackBottomSvg from "~/assets/hardware/Rack_PNG/Rack_bottom.svg";
 /* Real product photos — one per chassis SKU shipped across the demo's
  * two projects (Avaya + ADGSA-AI). Both routes share this manifest so
  * the first paint of /adgsa-ai doesn't show empty rack frames either. */
@@ -96,7 +98,9 @@ const critical: PreloadAsset[] = [
    * on first paint, so it leads the high-priority list. */
   { href: bgBlueJpg, type: "image/jpeg", priority: "high" },
   { href: gridTileSvg, type: "image/svg+xml", priority: "high" },
-  { href: rackFramePng, type: "image/png", priority: "high" },
+  /* Rack-constructor frame: top band + bottom plate. */
+  { href: rackTopSvg, type: "image/svg+xml", priority: "high" },
+  { href: rackBottomSvg, type: "image/svg+xml", priority: "high" },
   /* Avaya chassis */
   { href: productR660, type: "image/png", priority: "high" },
   { href: productR760, type: "image/png", priority: "high" },
