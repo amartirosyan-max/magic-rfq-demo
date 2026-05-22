@@ -14,7 +14,7 @@
  * This component is intentionally presentational: no selection logic,
  * no animation, no data fetching. `Rack.tsx` composes those concerns.
  */
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 
 import rackTopUrl from "~/assets/hardware/Rack_PNG/Rack_Top.svg";
 import rackBottomUrl from "~/assets/hardware/Rack_PNG/Rack_bottom.svg";
@@ -43,6 +43,11 @@ interface RackFrameProps {
    */
   widthPx?: number;
   className?: string;
+  /**
+   * Ref forwarded to the inner slot column div so callers can pass it as
+   * `dragConstraints` to framer-motion drag targets (`RackNode`).
+   */
+  slotColumnRef?: RefObject<HTMLDivElement | null>;
 }
 
 export function RackFrame({
@@ -50,6 +55,7 @@ export function RackFrame({
   children,
   widthPx,
   className,
+  slotColumnRef,
 }: RackFrameProps) {
   const totalHeight = rackTotalHeightPx(heightU);
 
@@ -82,7 +88,7 @@ export function RackFrame({
       >
         <RackSideRail side="left" />
 
-        <div className="relative flex min-h-0 flex-1 flex-col bg-black/20 rounded-[2px]">
+        <div ref={slotColumnRef} className="relative flex min-h-0 flex-1 flex-col">
           {Array.from({ length: heightU }, (_, idx) => {
             const positionU = heightU - idx;
             return <RackUnitSlot key={positionU} positionU={positionU} />;

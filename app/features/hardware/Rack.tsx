@@ -1,27 +1,32 @@
-import { useMemo, type MouseEvent } from "react";
-import { motion } from "framer-motion";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Pencil, RotateCcw, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
+import { useRackEdits } from "./RackEditsContext";
 import type { Rack as RackType, RackUnit } from "./types";
-/* Shared filename → URL map for every chassis image used by the demo. */
 import { CHASSIS_IMAGE_URLS } from "~/features/hardware/chassis-assets";
 import {
   hardwareSpring,
   RACK_SCALE_FLANK,
   RACK_SCALE_SELECTED,
 } from "./motion";
+import { UNIT_HEIGHT_PX } from "./config";
 import { RackFrame, RackNode, StandaloneNode } from "./rack-constructor";
 
 /* ============================================================
- *  RACK UNIT — HOVER STYLES   ← edit these to tweak the look
+ *  RACK UNIT — HOVER STYLES
  * ------------------------------------------------------------
- *  Hover visuals for a unit *inside an already-selected rack*.
- *
- *  The hover frame is an outer border that sits on top and scales
- *  with the chassis so it stays visible when UNIT_HOVER_SCALE bumps.
- *  Negative inset values make the frame stick out past the slot edges.
+ *  Active only in normal (non-edit) mode when the rack is selected.
  *
  *    UNIT_HOVER_RING_INSET_X – horizontal stick-out (-inset-x-[Npx])
  *    UNIT_HOVER_RING_INSET_Y – top/bottom stick-out (-inset-y-[Npx])
@@ -35,18 +40,52 @@ const UNIT_HOVER_RING_RADIUS = "rounded-[5px]";
 const UNIT_HOVER_RING_BORDER = "border-2 border-white";
 const UNIT_HOVER_SCALE = 1.08;
 
+const SNAP_SPRING = { type: "spring" as const, stiffness: 380, damping: 28 };
+
 export interface RackColumnLabel {
-  /** First line (e.g. subsystem / role name). */
   line1: string;
-  /** Second line — rack id, e.g. "RACK 01". */
   line2: string;
 }
 
 interface RackProps {
   rack: RackType;
-  /** Optional two-line column header above the rack on Screen A. */
   columnLabel?: RackColumnLabel;
 }
+
+/* ── snap & collision helpers ───────────────────────────────────────── */
+
+function snapPositionU(
+  positionU: number,
+  sizeU: number,
+  heightU: number,
+  offsetY: number,
+): number {
+  const topInSlotColumn = (heightU - positionU - sizeU + 1) * UNIT_HEIGHT_PX;
+  const draggedTopY = topInSlotColumn + offsetY;
+  const rawRow = Math.round(draggedTopY / UNIT_HEIGHT_PX);
+  const unclamped = heightU - rawRow - sizeU + 1;
+  return Math.max(1, Math.min(heightU - sizeU + 1, unclamped));
+}
+
+function isSlotOccupied(
+  targetPositionU: number,
+  targetSizeU: number,
+  units: RackUnit[],
+  excludeId: string,
+  getPos: (unitId: string, original: number) => number,
+): boolean {
+  const lo = targetPositionU;
+  const hi = targetPositionU + targetSizeU - 1;
+  for (const u of units) {
+    if (u.id === excludeId) continue;
+    const uLo = getPos(u.id, u.positionU);
+    const uHi = uLo + u.sizeU - 1;
+    if (lo <= uHi && hi >= uLo) return true;
+  }
+  return false;
+}
+
+/* ── component ──────────────────────────────────────────────────────── */
 
 export function Rack({ rack, columnLabel }: RackProps) {
   const project = useHardwareProject();
@@ -58,11 +97,20 @@ export function Rack({ rack, columnLabel }: RackProps) {
     selectSubsystem,
   } = useSelection();
   const { isDeleted: isSubsystemDeleted } = useSubsystemEdits();
+  const { getPositionU, moveUnit, resetRack, hasPendingEdits } = useRackEdits();
 
-  /* Units whose parent subsystem was removed from the project disappear
-   * from the canvas — this keeps the racks visually consistent with the
-   * left-sidebar nav and the catalog. Restored subsystems re-populate
-   * automatically because `useSubsystemEdits` is reactive. */
+  const slotColumnRef = useRef<HTMLDivElement>(null);
+
+  /* Edit mode — when true nodes are draggable and click doesn't navigate */
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  /* Ghost landing slot */
+  const [ghost, setGhost] = useState<{
+    positionU: number;
+    sizeU: number;
+    valid: boolean;
+  } | null>(null);
+
   const visibleUnits = useMemo<RackUnit[]>(
     () => rack.units.filter((u) => !isSubsystemDeleted(u.subsystemId)),
     [rack.units, isSubsystemDeleted],
@@ -72,33 +120,21 @@ export function Rack({ rack, columnLabel }: RackProps) {
   const isSelected = selectedRackId === rack.id;
   const isOther = hasSelection && !isSelected;
 
-  /* Scale + opacity logic:
-   *   • no selection      → all racks at 1.0 (non-empty hover bumps)
-   *   • selected rack     → 1.15  (centre stage)
-   *   • non-selected racks → 0.75 + 50% opacity (carousel flanks)
-   *   • empty racks       → always 70% opacity in overview mode
-   */
+  /* Exit edit mode whenever this rack loses selection */
+  useEffect(() => {
+    if (!isSelected) setIsEditMode(false);
+  }, [isSelected]);
+
   const baseScale = isSelected
     ? RACK_SCALE_SELECTED
     : isOther
       ? RACK_SCALE_FLANK
       : 1;
   const baseOpacity = isOther ? 0.45 : rack.isEmpty && !hasSelection ? 0.7 : 1;
-
   const isClickable = !rack.isEmpty;
 
-  /* Click priority inside a selected rack:
-   *   1. click on a unit          → toggle that unit's selection
-   *   2. click on rack background → clear unit selection if any
-   *   3. otherwise (no unit set)  → deselect the rack
-   * In overview mode (rack not yet selected) any click promotes the
-   * rack to "selected".
-   *
-   * We stop propagation for *interactive* (non-empty) racks so the
-   * canvas-level "click outside any rack → deselect" handler (in
-   * ScreenA.tsx) doesn't immediately undo the selection we just made.
-   * Empty/decorative racks intentionally do not stop propagation —
-   * clicking on them behaves like clicking on blank canvas. */
+  /* ── click handlers ─────────────────────────────────────────────── */
+
   const handleRackClick = (e: MouseEvent) => {
     if (!isClickable) return;
     e.stopPropagation();
@@ -106,6 +142,8 @@ export function Rack({ rack, columnLabel }: RackProps) {
       selectRack(rack.id);
       return;
     }
+    /* In edit mode background click does nothing special */
+    if (isEditMode) return;
     if (selectedUnitId) {
       selectUnit(null);
     } else {
@@ -118,14 +156,77 @@ export function Rack({ rack, columnLabel }: RackProps) {
     unitId: string,
     subsystemId: string,
   ) => {
+    /* In edit mode the whole node is a drag target; clicks don't navigate */
+    if (isEditMode) return;
     if (!isSelected) return;
     e.stopPropagation();
     const nextUnit = selectedUnitId === unitId ? null : unitId;
     selectUnit(nextUnit);
-    /* Keep left sidebar in sync with rack-level unit selection so the
-     * corresponding subsystem row becomes selected too. */
     selectSubsystem(nextUnit ? subsystemId : null);
   };
+
+  /* ── drag callbacks ─────────────────────────────────────────────── */
+
+  const handleDragY = useCallback(
+    (unit: RackUnit, effectivePos: number, offsetY: number) => {
+      const snapped = snapPositionU(
+        effectivePos,
+        unit.sizeU,
+        rack.heightU,
+        offsetY,
+      );
+      const valid = !isSlotOccupied(
+        snapped,
+        unit.sizeU,
+        visibleUnits,
+        unit.id,
+        (uid, orig) => getPositionU(rack.id, uid, orig),
+      );
+      setGhost({ positionU: snapped, sizeU: unit.sizeU, valid });
+    },
+    [rack.heightU, rack.id, visibleUnits, getPositionU],
+  );
+
+  const handleDropY = useCallback(
+    (unit: RackUnit, effectivePos: number, offsetY: number) => {
+      const snapped = snapPositionU(
+        effectivePos,
+        unit.sizeU,
+        rack.heightU,
+        offsetY,
+      );
+      const occupied = isSlotOccupied(
+        snapped,
+        unit.sizeU,
+        visibleUnits,
+        unit.id,
+        (uid, orig) => getPositionU(rack.id, uid, orig),
+      );
+
+      if (!occupied && snapped !== effectivePos) {
+        moveUnit(rack.id, unit.id, snapped);
+      }
+
+      if (occupied) {
+        /* Red flash for 220ms so the user sees the rejection, then clear. */
+        setGhost((g) => (g ? { ...g, valid: false } : null));
+        window.setTimeout(() => setGhost(null), 220);
+      } else {
+        setGhost(null);
+      }
+    },
+    [rack.heightU, rack.id, visibleUnits, getPositionU, moveUnit],
+  );
+
+  const animateYForUnit = useCallback(
+    (unit: RackUnit): number => {
+      const effective = getPositionU(rack.id, unit.id, unit.positionU);
+      return (unit.positionU - effective) * UNIT_HEIGHT_PX;
+    },
+    [rack.id, getPositionU],
+  );
+
+  /* ── render ─────────────────────────────────────────────────────── */
 
   return (
     <motion.div
@@ -141,9 +242,7 @@ export function Rack({ rack, columnLabel }: RackProps) {
         isClickable ? "cursor-pointer" : "cursor-default",
       )}
     >
-      {/* Title — absolutely positioned above the rack frame and inside the
-          scaled motion.div so it tracks the rack's visual top at every
-          scale (1.15 selected, 0.75 flanking, 1.0 idle). */}
+      {/* Column label */}
       {columnLabel ? (
         <div
           className={cn(
@@ -154,37 +253,110 @@ export function Rack({ rack, columnLabel }: RackProps) {
           <span className="max-w-[14rem] text-[15px] font-semibold leading-snug">
             {columnLabel.line1}
           </span>
-          {/* <span className="text-[18px] font-bold leading-none tracking-wide">
-            {columnLabel.line2}
-          </span> */}
         </div>
       ) : null}
 
-      {rack.kind === "standalone"
-        ? renderStandalone()
-        : renderFramedRack()}
+      {/* Rack chrome buttons — visible when this rack is selected */}
+      <AnimatePresence>
+        {isSelected ? (
+          <motion.div
+            key="rack-chrome"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.18 }}
+            className="pointer-events-auto absolute -top-5 right-0 flex items-center gap-1.5"
+          >
+            {/* Reset — only when edits exist */}
+            {hasPendingEdits(rack.id) ? (
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  resetRack(rack.id);
+                }}
+                className="flex items-center text-white/60 hover:text-white"
+                aria-label="Reset rack layout"
+              >
+                <RotateCcw className="size-3" />
+              </motion.button>
+            ) : null}
+
+            {/* Edit / Done toggle */}
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.85 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditMode((v) => !v);
+              }}
+              className={cn(
+                "flex items-center transition-colors",
+                isEditMode
+                  ? "text-white"
+                  : "text-white/60 hover:text-white",
+              )}
+              aria-label={isEditMode ? "Done editing" : "Edit node positions"}
+            >
+              {isEditMode ? (
+                <X className="size-3.5" />
+              ) : (
+                <Pencil className="size-3" />
+              )}
+            </motion.button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {rack.kind === "standalone" ? renderStandalone() : renderFramedRack()}
     </motion.div>
   );
 
-  /**
-   * Framed-rack body: top SVG + N × slot + bottom SVG, with each unit
-   * absolute-positioned by `(positionU, sizeU)`. Empty/decorative racks
-   * still hit this path — they just render no `<RackNode>` children.
-   */
   function renderFramedRack() {
     return (
-      <RackFrame heightU={rack.heightU}>
+      <RackFrame heightU={rack.heightU} slotColumnRef={slotColumnRef}>
+        {/* Ghost landing slot */}
+        {isEditMode && ghost ? (
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute left-0 right-0 rounded-[2px] border transition-colors duration-100",
+              ghost.valid
+                ? "border-white/50 bg-white/15"
+                : "border-red-400/70 bg-red-400/20",
+            )}
+            style={{
+              top:
+                (rack.heightU - ghost.positionU - ghost.sizeU + 1) *
+                UNIT_HEIGHT_PX,
+              height: ghost.sizeU * UNIT_HEIGHT_PX,
+              zIndex: 25,
+            }}
+          />
+        ) : null}
+
         {visibleUnits.map((unit) => {
           const subsystem = project.subsystems.find(
             (s) => s.id === unit.subsystemId,
           );
           if (!subsystem) return null;
+
+          const effectivePos = getPositionU(rack.id, unit.id, unit.positionU);
+
           return (
             <RackNode
               key={unit.id}
               positionU={unit.positionU}
               sizeU={unit.sizeU}
               heightU={rack.heightU}
+              draggable={isEditMode}
+              dragConstraintsRef={slotColumnRef}
+              onDragY={(offsetY) => handleDragY(unit, effectivePos, offsetY)}
+              onDropY={(offsetY) => handleDropY(unit, effectivePos, offsetY)}
+              animateY={animateYForUnit(unit)}
             >
               {renderUnitBody(unit, subsystem.chassis.image, subsystem.chassis.name)}
             </RackNode>
@@ -194,13 +366,6 @@ export function Rack({ rack, columnLabel }: RackProps) {
     );
   }
 
-  /**
-   * Standalone-rack body: a single bare chassis at its own intrinsic
-   * size, no frame, no rails. Multiple units in a standalone rack
-   * stack vertically in the order they appear in `visibleUnits` — the
-   * primary use case is exactly one solo node, but the implementation
-   * doesn't enforce a hard cardinality.
-   */
   function renderStandalone() {
     return (
       <div className="flex flex-col items-center gap-1">
@@ -219,21 +384,19 @@ export function Rack({ rack, columnLabel }: RackProps) {
     );
   }
 
-  /**
-   * Inner click/hover/image body shared by framed and standalone racks.
-   * Kept identical across paths so the hover-ring + selection-bump
-   * tokens at the top of this file apply uniformly.
-   */
   function renderUnitBody(unit: RackUnit, imageKey: string, alt: string) {
     const image = CHASSIS_IMAGE_URLS[imageKey];
     return (
       <motion.div
         onClick={(e) => handleUnitClick(e, unit.id, unit.subsystemId)}
-        whileHover={isSelected ? { scale: UNIT_HOVER_SCALE } : undefined}
-        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+        whileHover={
+          isSelected && !isEditMode ? { scale: UNIT_HOVER_SCALE } : undefined
+        }
+        transition={SNAP_SPRING}
         className={cn(
           "group relative h-full w-full origin-center",
-          isSelected && "cursor-pointer hover:z-10",
+          isSelected && !isEditMode && "cursor-pointer hover:z-10",
+          isEditMode && "cursor-inherit",
         )}
       >
         <img
@@ -242,7 +405,7 @@ export function Rack({ rack, columnLabel }: RackProps) {
           draggable={false}
           className="relative z-0 block h-full w-full object-fill"
         />
-        {isSelected ? (
+        {isSelected && !isEditMode ? (
           <span
             aria-hidden
             className={cn(

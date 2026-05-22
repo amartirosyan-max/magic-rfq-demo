@@ -7,6 +7,7 @@ import { DiagramProvider } from "~/context/DiagramContext";
 import formatToUSD from "~/utils/formatUSD";
 import { CatalogPanel } from "./CatalogPanel";
 import { ComponentEditsProvider } from "./ComponentEditsProvider";
+import { RackEditsProvider } from "./RackEditsProvider";
 import {
   getFakeNavItems,
   getFakeProject,
@@ -59,9 +60,11 @@ export function HardwareLayout({
     <HardwareProjectProvider project={project}>
       <SelectionProvider>
         <SubsystemEditsProvider key={project.id}>
+          <RackEditsProvider key={project.id}>
           <ComponentEditsProvider>
             <HardwareLayoutInner>{children}</HardwareLayoutInner>
           </ComponentEditsProvider>
+          </RackEditsProvider>
         </SubsystemEditsProvider>
       </SelectionProvider>
     </HardwareProjectProvider>
