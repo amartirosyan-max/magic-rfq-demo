@@ -338,3 +338,42 @@ When `effectivePositionU === originalPositionU` → `animateY = 0` (no offset).
 - [ ] Standalone racks: no drag handles.
 - [ ] Switching projects (Avaya ↔ ADGSA-AI) clears all overrides (provider
   is keyed by `project.id`).
+
+---
+
+## 13. v2 addendum — cross-rack drag (IMPLEMENTED)
+
+The v1 above (framer-motion, single-rack, Y-only) was superseded. Cross-rack
+moves were the trigger to switch the **engine** to `@dnd-kit/core` (mechanics)
++ framer-motion (visual polish). This reverses the "no drag library" note —
+dnd-kit's `<DragOverlay>` renders the lifted node in a body-level portal so it
+is never clipped crossing racks, which pure framer cannot do cleanly.
+
+What changed vs v1:
+- **State** — `RackEditsContext` moved from `rackId → unitId → positionU` to a
+  global placement overlay `unitId → { rackId, positionU }`, so a unit can
+  change *which rack it belongs to*. New surface: `placementOf`, `unitsForRack`,
+  `moveUnit(unitId, rackId, positionU)`, `resetRack`, `resetAll`,
+  `hasPendingEdits`. There is **no edit button** — a node is draggable whenever
+  its rack is selected (press-and-hold to lift, quick-click to navigate).
+- **Snap math is now scale-correct.** The buggy offset-pixel formula
+  (`info.offset.y / UNIT_HEIGHT_PX`, wrong under the 1.15 selected scale) is
+  replaced by `pointerToPositionU(pointerY, slotRect, heightU, sizeU)` reading
+  the hovered rack's **live** `getBoundingClientRect()` — scale is encoded in
+  the rect, so no manual factor.
+- **New files** — `RackDndProvider.tsx` (`<DndContext>` + `<DragOverlay>` +
+  `useRackDnd()` session state) and `DraggableRackNode.tsx` (`useDraggable`
+  wrapper). `RackNode.tsx` is now purely presentational (drag passed as plain
+  props) → migration-safe. `ScreenA.tsx` wraps the rack row in `RackDndProvider`.
+- **UX** — press-and-hold (PointerSensor `delay 140`) lifts a node; hovering a
+  rack scales it to selected and shows a live ghost; drop commits via `moveUnit`
+  or rejects (occupied / doesn't fit). Touch via `TouchSensor`; auto-scroll for
+  the 5-rack overflow project comes free from dnd-kit.
+- **Drop targeting** — `pointerWithin` then a `closestCenter` fallback
+  (`stickyNearestRack`) keeps the *nearest* rack the active, zoomed drop target,
+  so dragging to a rack's top/bottom edge never loses it. The stray click the
+  browser fires right after a drag is swallowed (`consumeDragClick`) so a drag
+  never navigates.
+
+Still deferred: keyboard-sensor a11y, drag-to-swap, standalone-node drag,
+backend persistence.

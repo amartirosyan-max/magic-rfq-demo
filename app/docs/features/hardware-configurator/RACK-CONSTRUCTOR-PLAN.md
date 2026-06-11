@@ -391,7 +391,10 @@ phase.
     `<Loader2/>` and an empty state for projects that have no racks yet.
 12. **Mobile / accessibility / i18n.** Project-wide gap; document the
     deferral so it's not assumed working.
-13. **Drag-and-drop inside a rack.** Deferred from v1.
+13. ~~**Drag-and-drop inside a rack.** Deferred from v1.~~ **DONE** — and
+    extended to **cross-rack** moves. Built on `@dnd-kit/core` + framer-motion
+    (this supersedes the "no drag library" note in §7); see
+    `RACK-NODE-EDITOR-PLAN.md` §13.
 14. **"Change" chassis flow + the `+` carousel button.** Deferred from v1.
 15. **Magic AI Advisor adapting to hardware context.** Deferred from v1.
 16. **EQueryKey additions.** `HARDWARE_LAYOUT`, `HARDWARE_CATALOG` (and

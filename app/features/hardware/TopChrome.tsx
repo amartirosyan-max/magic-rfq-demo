@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useHardwareProject } from "./HardwareProjectContext";
+import { useRackEdits } from "./RackEditsContext";
 import { useSelection } from "./SelectionContext";
 import { useActiveSubsystem } from "./useActiveSubsystem";
 
@@ -178,12 +179,12 @@ function Tabs() {
  * is decorative and the arrows are subtly dimmed.
  */
 function CarouselControl() {
-  const project = useHardwareProject();
   const { selectedRackId, selectRack } = useSelection();
+  const { racks } = useRackEdits();
 
   const selectableRacks = useMemo(
-    () => project.racks.filter((r) => !r.isEmpty),
-    [project.racks],
+    () => racks.filter((r) => !r.isEmpty),
+    [racks],
   );
 
   const activeIndex = selectedRackId

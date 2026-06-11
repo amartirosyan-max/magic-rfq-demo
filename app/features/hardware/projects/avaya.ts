@@ -317,15 +317,6 @@ const rack02Units: RackUnit[] = [
 
 const racks: Rack[] = [
   {
-    id: "rack-empty-left",
-    name: "Empty Rack",
-    shortLabel: "",
-    kind: "rack-42u",
-    heightU: 42,
-    units: [],
-    isEmpty: true,
-  },
-  {
     id: "rack-01",
     name: "Infrastructure Rack 01",
     shortLabel: "Infrastructure Rack 01",
@@ -344,15 +335,6 @@ const racks: Rack[] = [
     units: rack02Units,
     isEmpty: false,
     columnLabel: { line1: "Infrastructure", line2: "Rack 02" },
-  },
-  {
-    id: "rack-empty-right",
-    name: "Empty Rack",
-    shortLabel: "",
-    kind: "rack-42u",
-    heightU: 42,
-    units: [],
-    isEmpty: true,
   },
 ];
 

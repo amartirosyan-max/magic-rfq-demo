@@ -1,35 +1,17 @@
 /**
  * RackNode — a chassis card occupying `sizeU` rows of a rack.
  *
- * Positioned absolutely inside the center column's node layer.
- *
- * Drag flow (when `draggable` is true):
- *   1. User pointer-down + drags → framer-motion mutates the `y`
- *      motion value within the slot column bounds.
- *   2. On release we ALWAYS spring `y` toward the current `animateY`
- *      target (`animate(y, animateY, …)`).
- *      • Valid drop  → parent calls `moveUnit` → `animateY` updates →
- *        the `useEffect` below re-targets the spring to the new slot.
- *        The animation starts FROM the drop position, not from origin.
- *      • Rejected drop → `animateY` unchanged → the manual animate in
- *        `onDragEnd` springs the node back to its original slot.
- *
- * We deliberately avoid framer-motion's `dragSnapToOrigin` because it
- * snaps to origin BEFORE React re-renders with the new override —
- * producing a visible "jump back then forward" artefact.
+ * Purely presentational: it absolutely positions itself inside the center
+ * column's node layer at the U position it is given, and renders whatever
+ * body it is handed. It owns NO drag logic — the drag wiring (dnd-kit
+ * `useDraggable`) lives one layer up in `DraggableRackNode.tsx` and is passed
+ * in as plain props (`nodeRef`, `dragHandleProps`, `isActiveDrag`). This keeps
+ * the primitive free of feature dependencies so it can migrate to Magic 2.1
+ * unchanged (see `MIGRATION-NOTES.md`).
  */
-import {
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-  useEffect,
-  useState,
-} from "react";
-import { animate, motion, useMotionValue } from "framer-motion";
+import type { CSSProperties, ReactNode, Ref } from "react";
 
 import { UNIT_HEIGHT_PX } from "../config";
-
-const SNAP_SPRING = { type: "spring" as const, stiffness: 380, damping: 28 };
 
 interface RackNodeProps {
   positionU: number;
@@ -38,19 +20,15 @@ interface RackNodeProps {
   children?: ReactNode;
   className?: string;
 
-  /** True when the rack is in edit mode — enables drag along Y axis. */
+  /** Callback ref for the positioned element (dnd-kit `setNodeRef`). */
+  nodeRef?: Ref<HTMLDivElement>;
+  /** True while editing — adds grab cursor + disables touch scrolling. */
   draggable?: boolean;
-  /** Slot column ref used as framer-motion dragConstraints boundary. */
-  dragConstraintsRef?: RefObject<HTMLElement | null>;
-  /** Called every animation frame with the raw Y drag offset in px. */
-  onDragY?: (offsetPx: number) => void;
-  /** Called on release with the final Y offset in px. */
-  onDropY?: (offsetPx: number) => void;
-  /**
-   * Pixel offset to animate the node from its natural layout position.
-   * 0 = original slot. Drives the spring-to-snap after a move or reset.
-   */
-  animateY?: number;
+  /** Drag listeners + a11y attributes from `useDraggable`, spread onto the node. */
+  dragHandleProps?: Record<string, unknown>;
+  /** True while this node is the active drag item — hide it so only the
+   *  `<DragOverlay>` copy is visible. */
+  isActiveDrag?: boolean;
 }
 
 export function RackNode({
@@ -59,29 +37,12 @@ export function RackNode({
   heightU,
   children,
   className,
+  nodeRef,
   draggable = false,
-  dragConstraintsRef,
-  onDragY,
-  onDropY,
-  animateY = 0,
+  dragHandleProps,
+  isActiveDrag = false,
 }: RackNodeProps) {
-  const topInSlotColumn =
-    (heightU - positionU - sizeU + 1) * UNIT_HEIGHT_PX;
-
-  /* Manually controlled motion value — see file header for rationale. */
-  const y = useMotionValue(animateY);
-  const [isDragging, setIsDragging] = useState(false);
-
-  /**
-   * Re-animate to the current target whenever it changes (a successful
-   * move or an external reset). framer-motion will cancel any in-flight
-   * animation on this motion value and start a fresh spring from the
-   * current `y` — which is exactly the visual continuity we want.
-   */
-  useEffect(() => {
-    const controls = animate(y, animateY, SNAP_SPRING);
-    return () => controls.stop();
-  }, [animateY, y]);
+  const topInSlotColumn = (heightU - positionU - sizeU + 1) * UNIT_HEIGHT_PX;
 
   const style: CSSProperties = {
     top: topInSlotColumn,
@@ -91,61 +52,23 @@ export function RackNode({
   };
 
   return (
-    <motion.div
+    <div
+      ref={nodeRef}
       data-rack-node
       data-position-u={positionU}
       data-size-u={sizeU}
-      style={{ ...style, y }}
-      /**
-       * `zIndex` is animated via `animate` so a dragging node sits above
-       * its peers (z=30), and `whileHover` lifts a hovered node above
-       * neighbours (z=20) so the chassis hover ring's negative-inset
-       * border is never clipped by an adjacent node's stacking layer.
-       */
-      animate={{ zIndex: isDragging ? 30 : 1 }}
-      whileHover={!isDragging ? { zIndex: 20 } : undefined}
-      transition={SNAP_SPRING}
+      style={style}
       className={[
         "pointer-events-auto absolute overflow-visible",
-        draggable ? "cursor-grab active:cursor-grabbing" : "",
+        draggable ? "cursor-grab touch-none active:cursor-grabbing" : "hover:z-30",
+        isActiveDrag ? "opacity-0" : "",
         className ?? "",
-      ].join(" ")}
-      drag={draggable ? "y" : false}
-      dragConstraints={draggable ? dragConstraintsRef : undefined}
-      dragElastic={0}
-      dragMomentum={false}
-      onDragStart={() => setIsDragging(true)}
-      onDrag={(_, info) => onDragY?.(info.offset.y)}
-      onDragEnd={(_, info) => {
-        setIsDragging(false);
-        onDropY?.(info.offset.y);
-        /**
-         * Always spring `y` to the current `animateY` target. If the
-         * parent commits the move (`moveUnit`), the next render will
-         * change `animateY` and the `useEffect` above re-targets to
-         * the new slot — picking up from the drop position seamlessly.
-         */
-        animate(y, animateY, SNAP_SPRING);
-      }}
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...dragHandleProps}
     >
-      {/* Lift effect while dragging */}
-      <motion.div
-        className="h-full w-full"
-        animate={
-          isDragging
-            ? {
-                scale: 1.04,
-                filter: "drop-shadow(0 0 7px rgba(255,255,255,0.6))",
-              }
-            : {
-                scale: 1,
-                filter: "drop-shadow(0 0 0px rgba(255,255,255,0))",
-              }
-        }
-        transition={SNAP_SPRING}
-      >
-        {children}
-      </motion.div>
-    </motion.div>
+      {children}
+    </div>
   );
 }

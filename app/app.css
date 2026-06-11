@@ -329,3 +329,11 @@ body {
   height: 100% !important;
   min-height: 100% !important;
 }
+
+/* While a rack is being dragged to reorder, force the "grabbing" cursor across
+   the whole canvas (rack reorder has no DragOverlay to carry the cursor, unlike
+   node drags). Toggled from `RackDndProvider`. */
+html.is-reordering-rack,
+html.is-reordering-rack * {
+  cursor: grabbing !important;
+}

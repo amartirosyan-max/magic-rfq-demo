@@ -1,9 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Plus } from "lucide-react";
 import { useHardwareProject } from "./HardwareProjectContext";
 import { Rack } from "./Rack";
+import { RackDndProvider } from "./RackDndProvider";
+import { useRackEdits } from "./RackEditsContext";
 import { useSelection } from "./SelectionContext";
-import { RACK_MARGIN_X_PX, RACK_WIDTH_PX } from "./config";
+import { RACK_MARGIN_X_PX, RACK_WIDTH_PX, rackTotalHeightPx } from "./config";
+import { RACK_SCALE_FLANK, hardwareSpring } from "./motion";
 
 /**
  * Scroll-pad on each side of the rack row.
@@ -53,7 +57,18 @@ const SCROLL_PAD = `max(0px, calc(50% - ${
  *   - Plain background-click deselect leaves the scroll position
  *     alone so the user can keep panning.
  */
+/**
+ * Thin wrapper that mounts the drag-and-drop engine around the rack carousel.
+ */
 export function ScreenA() {
+  return (
+    <RackDndProvider>
+      <ScreenAInner />
+    </RackDndProvider>
+  );
+}
+
+function ScreenAInner() {
   const project = useHardwareProject();
   const { selectedRackId, selectRack, resetViewToken } = useSelection();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -70,12 +85,10 @@ export function ScreenA() {
    * the scroll event our own .scrollTo() triggers. */
   const programmaticTargetRef = useRef<number | null>(null);
 
-  /* Render the racks as-is — empty decorative flanks (Avaya) included.
-   * They were a deliberate composition tool in the original Avaya
-   * demo (frame-only racks on either side of the two real ones), and
-   * the new overflow path handles them transparently since they take
-   * the same slot width as real racks. */
-  const racks = project.racks;
+  /* Effective rack list from the edits overlay — source racks plus any the
+   * user added, in their chosen order. `addRack` appends a new rack at the
+   * right (just before the "+" control). */
+  const { racks, addRack } = useRackEdits();
 
   /* Snap the scroller so the row's midpoint sits under the canvas
    * centre.  No-op when the row is narrower than the canvas (FITS
@@ -167,28 +180,28 @@ export function ScreenA() {
     if (overflow || !selectedRackId) return 0;
     const idx = racks.findIndex((r) => r.id === selectedRackId);
     if (idx < 0) return 0;
-    const n = racks.length;
-    if (n === 0) return 0;
-    const centreIdx = (n - 1) / 2;
-    return ((centreIdx - idx) * 100) / n;
+    /* +1 slot for the add-rack "+" control, which shares the row and shifts the
+     * mx-auto centre. The translate is a % of the full row width, so the slot
+     * count must include it or the selected rack lands off-centre. */
+    const slots = racks.length + 1;
+    const centreIdx = (slots - 1) / 2;
+    return ((centreIdx - idx) * 100) / slots;
   }, [overflow, selectedRackId, racks]);
 
   useEffect(() => {
     if (!overflow || !selectedRackId) return;
+    const el = scrollRef.current;
     const target = rackRefs.current[selectedRackId];
-    if (!target) return;
+    if (!el || !target) return;
     /* scrollIntoView issues its own scroll programmatically; record
      * the eventual scrollLeft so our scroll listener doesn't mistake
      * it for a user pan.  Compute the destination the same way
      * `inline: "center"` does so we can match it ±2 px. */
-    const el = scrollRef.current;
-    if (el) {
-      const elRect = el.getBoundingClientRect();
-      const tRect = target.getBoundingClientRect();
-      const delta =
-        tRect.left - elRect.left + tRect.width / 2 - elRect.width / 2;
-      programmaticTargetRef.current = el.scrollLeft + delta;
-    }
+    const elRect = el.getBoundingClientRect();
+    const tRect = target.getBoundingClientRect();
+    const delta =
+      tRect.left - elRect.left + tRect.width / 2 - elRect.width / 2;
+    programmaticTargetRef.current = el.scrollLeft + delta;
     target.scrollIntoView({
       inline: "center",
       block: "nearest",
@@ -238,17 +251,52 @@ export function ScreenA() {
           paddingRight: overflow ? SCROLL_PAD : undefined,
         }}
       >
-        {racks.map((rack) => (
-          <div
-            key={rack.id}
-            ref={(el) => {
-              rackRefs.current[rack.id] = el;
+        <AnimatePresence initial={false}>
+          {racks.map((rack) => (
+            <motion.div
+              layout
+              key={rack.id}
+              ref={(el) => {
+                rackRefs.current[rack.id] = el;
+              }}
+              initial={{ opacity: 0, x: 80 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 80 }}
+              transition={{ type: "spring", stiffness: 240, damping: 28 }}
+              className="flex h-full items-end mx-5"
+            >
+              <Rack rack={rack} columnLabel={rack.columnLabel} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {/* Add-rack control — a ghost rack on the right; click to add a new
+            rack (it slides in from the right). It mirrors the non-selected
+            racks: when a rack is selected it shrinks + dims like the others. */}
+        <motion.div
+          layout
+          className="flex h-full shrink-0 items-end mx-5"
+        >
+          <motion.button
+            type="button"
+            onClick={addRack}
+            animate={{
+              scale: hasSelection ? RACK_SCALE_FLANK : 1,
+              opacity: hasSelection ? 0.45 : 1,
             }}
-            className="flex h-full items-end mx-5"
+            whileHover={{
+              scale: (hasSelection ? RACK_SCALE_FLANK : 1) * 1.05,
+              opacity: 1,
+            }}
+            whileTap={{ scale: (hasSelection ? RACK_SCALE_FLANK : 1) * 0.95 }}
+            transition={hardwareSpring}
+            aria-label="Add rack"
+            style={{ width: RACK_WIDTH_PX, height: rackTotalHeightPx(42) }}
+            className="flex origin-center cursor-pointer items-center justify-center rounded-[1px] border-2 border-dashed border-white/35 bg-black/15 text-white/55 transition-colors hover:border-white/70 hover:bg-black/20 hover:text-white"
           >
-            <Rack rack={rack} columnLabel={rack.columnLabel} />
-          </div>
-        ))}
+            <Plus className="size-7" />
+          </motion.button>
+        </motion.div>
       </motion.div>
     </motion.div>
   );

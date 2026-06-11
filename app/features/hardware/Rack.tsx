@@ -1,18 +1,14 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-} from "react";
+import { useMemo, type MouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Pencil, RotateCcw, X } from "lucide-react";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { RotateCcw } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useHardwareProject } from "./HardwareProjectContext";
 import { useSelection } from "./SelectionContext";
 import { useSubsystemEdits } from "./SubsystemEditsContext";
 import { useRackEdits } from "./RackEditsContext";
+import { useRackDnd } from "./RackDndProvider";
+import { DraggableRackNode } from "./DraggableRackNode";
 import type { Rack as RackType, RackUnit } from "./types";
 import { CHASSIS_IMAGE_URLS } from "~/features/hardware/chassis-assets";
 import {
@@ -21,18 +17,12 @@ import {
   RACK_SCALE_SELECTED,
 } from "./motion";
 import { UNIT_HEIGHT_PX } from "./config";
-import { RackFrame, RackNode, StandaloneNode } from "./rack-constructor";
+import { RackFrame, StandaloneNode } from "./rack-constructor";
 
 /* ============================================================
  *  RACK UNIT — HOVER STYLES
  * ------------------------------------------------------------
  *  Active only in normal (non-edit) mode when the rack is selected.
- *
- *    UNIT_HOVER_RING_INSET_X – horizontal stick-out (-inset-x-[Npx])
- *    UNIT_HOVER_RING_INSET_Y – top/bottom stick-out (-inset-y-[Npx])
- *    UNIT_HOVER_RING_RADIUS  – corner radius on the ring
- *    UNIT_HOVER_RING_BORDER  – Tailwind border classes for the ring
- *    UNIT_HOVER_SCALE        – scale multiplier (1 = no bump)
  * ============================================================ */
 const UNIT_HOVER_RING_INSET_X = "-inset-x-[5px]";
 const UNIT_HOVER_RING_INSET_Y = "-inset-y-[2px]";
@@ -40,7 +30,7 @@ const UNIT_HOVER_RING_RADIUS = "rounded-[5px]";
 const UNIT_HOVER_RING_BORDER = "border-2 border-white";
 const UNIT_HOVER_SCALE = 1.08;
 
-const SNAP_SPRING = { type: "spring" as const, stiffness: 380, damping: 28 };
+const HOVER_SPRING = { type: "spring" as const, stiffness: 380, damping: 28 };
 
 export interface RackColumnLabel {
   line1: string;
@@ -50,39 +40,6 @@ export interface RackColumnLabel {
 interface RackProps {
   rack: RackType;
   columnLabel?: RackColumnLabel;
-}
-
-/* ── snap & collision helpers ───────────────────────────────────────── */
-
-function snapPositionU(
-  positionU: number,
-  sizeU: number,
-  heightU: number,
-  offsetY: number,
-): number {
-  const topInSlotColumn = (heightU - positionU - sizeU + 1) * UNIT_HEIGHT_PX;
-  const draggedTopY = topInSlotColumn + offsetY;
-  const rawRow = Math.round(draggedTopY / UNIT_HEIGHT_PX);
-  const unclamped = heightU - rawRow - sizeU + 1;
-  return Math.max(1, Math.min(heightU - sizeU + 1, unclamped));
-}
-
-function isSlotOccupied(
-  targetPositionU: number,
-  targetSizeU: number,
-  units: RackUnit[],
-  excludeId: string,
-  getPos: (unitId: string, original: number) => number,
-): boolean {
-  const lo = targetPositionU;
-  const hi = targetPositionU + targetSizeU - 1;
-  for (const u of units) {
-    if (u.id === excludeId) continue;
-    const uLo = getPos(u.id, u.positionU);
-    const uHi = uLo + u.sizeU - 1;
-    if (lo <= uHi && hi >= uLo) return true;
-  }
-  return false;
 }
 
 /* ── component ──────────────────────────────────────────────────────── */
@@ -97,53 +54,83 @@ export function Rack({ rack, columnLabel }: RackProps) {
     selectSubsystem,
   } = useSelection();
   const { isDeleted: isSubsystemDeleted } = useSubsystemEdits();
-  const { getPositionU, moveUnit, resetRack, hasPendingEdits } = useRackEdits();
+  const { unitsForRack, resetRack, hasPendingEdits } = useRackEdits();
+  const { activeRackId, ghost, isDragging, consumeDragClick } = useRackDnd();
 
-  const slotColumnRef = useRef<HTMLDivElement>(null);
+  /* Framed racks are drop targets whenever some rack is selected (a drag can
+   * only start from a selected rack). */
+  const { setNodeRef: setDroppableRef } = useDroppable({
+    id: rack.id,
+    disabled: rack.kind === "standalone" || selectedRackId === null,
+  });
 
-  /* Edit mode — when true nodes are draggable and click doesn't navigate */
-  const [isEditMode, setIsEditMode] = useState(false);
+  /* The rack body is a drag handle for reordering racks: press-hold to drag it
+   * left/right, quick-click still selects. Nodes stop pointer propagation
+   * (see `DraggableRackNode`) so pressing a node moves the node instead. */
+  const {
+    setNodeRef: setRackDragRef,
+    listeners: rackDragListeners,
+    attributes: rackDragAttributes,
+    isDragging: isReordering,
+  } = useDraggable({
+    id: `rack:${rack.id}`,
+    data: { type: "rack", rackId: rack.id },
+    disabled: rack.kind === "standalone",
+  });
 
-  /* Ghost landing slot */
-  const [ghost, setGhost] = useState<{
-    positionU: number;
-    sizeU: number;
-    valid: boolean;
-  } | null>(null);
-
-  const visibleUnits = useMemo<RackUnit[]>(
-    () => rack.units.filter((u) => !isSubsystemDeleted(u.subsystemId)),
-    [rack.units, isSubsystemDeleted],
+  /* Effective members of THIS rack (after cross-rack moves), minus units of
+   * deleted subsystems. */
+  const placedUnits = useMemo(
+    () =>
+      unitsForRack(rack.id).filter(
+        (p) => !isSubsystemDeleted(p.unit.subsystemId),
+      ),
+    [unitsForRack, rack.id, isSubsystemDeleted],
   );
 
-  const hasSelection = selectedRackId !== null;
   const isSelected = selectedRackId === rack.id;
-  const isOther = hasSelection && !isSelected;
+  const isActive = activeRackId === rack.id;
+  /* During a drag, emphasis is the hovered (active) rack ONLY: the source stays
+   * focused on pickup until the pointer leaves it, then whichever rack the
+   * pointer enters zooms in, and when the pointer is in the gap (no active rack)
+   * EVERY rack dims to a "disabled" look. Idle, emphasis is the selection.
+   * `selectedRackId` is untouched mid-drag so drag/drop gating stays stable —
+   * focus is committed to the landing rack on settle. */
+  const isFocused = isDragging ? isActive : isSelected;
+  const dragInFlight = isDragging;
 
-  /* Exit edit mode whenever this rack loses selection */
-  useEffect(() => {
-    if (!isSelected) setIsEditMode(false);
-  }, [isSelected]);
-
-  const baseScale = isSelected
-    ? RACK_SCALE_SELECTED
-    : isOther
-      ? RACK_SCALE_FLANK
-      : 1;
-  const baseOpacity = isOther ? 0.45 : rack.isEmpty && !hasSelection ? 0.7 : 1;
+  let baseScale = 1;
+  let baseOpacity = 1;
+  if (isDragging) {
+    baseScale = isActive ? RACK_SCALE_SELECTED : RACK_SCALE_FLANK;
+    baseOpacity = isActive ? 1 : 0.4;
+  } else if (isSelected) {
+    baseScale = RACK_SCALE_SELECTED;
+  } else if (selectedRackId !== null) {
+    baseScale = RACK_SCALE_FLANK;
+    baseOpacity = 0.45;
+  } else if (rack.isEmpty) {
+    baseOpacity = 0.7;
+  }
   const isClickable = !rack.isEmpty;
+  /* A non-focused rack while something else is focused (selected or being
+   * dragged over) — used to fade its column label. */
+  const isOther = !isFocused && (isDragging || selectedRackId !== null);
 
   /* ── click handlers ─────────────────────────────────────────────── */
 
   const handleRackClick = (e: MouseEvent) => {
     if (!isClickable) return;
+    /* Swallow the stray click the browser fires right after a drag. */
+    if (consumeDragClick()) {
+      e.stopPropagation();
+      return;
+    }
     e.stopPropagation();
     if (!isSelected) {
       selectRack(rack.id);
       return;
     }
-    /* In edit mode background click does nothing special */
-    if (isEditMode) return;
     if (selectedUnitId) {
       selectUnit(null);
     } else {
@@ -156,8 +143,12 @@ export function Rack({ rack, columnLabel }: RackProps) {
     unitId: string,
     subsystemId: string,
   ) => {
-    /* In edit mode the whole node is a drag target; clicks don't navigate */
-    if (isEditMode) return;
+    /* A quick click navigates; a press-and-hold drags. Swallow the click that
+     * fires right after a drag so dragging never navigates. */
+    if (consumeDragClick()) {
+      e.stopPropagation();
+      return;
+    }
     if (!isSelected) return;
     e.stopPropagation();
     const nextUnit = selectedUnitId === unitId ? null : unitId;
@@ -165,82 +156,34 @@ export function Rack({ rack, columnLabel }: RackProps) {
     selectSubsystem(nextUnit ? subsystemId : null);
   };
 
-  /* ── drag callbacks ─────────────────────────────────────────────── */
-
-  const handleDragY = useCallback(
-    (unit: RackUnit, effectivePos: number, offsetY: number) => {
-      const snapped = snapPositionU(
-        effectivePos,
-        unit.sizeU,
-        rack.heightU,
-        offsetY,
-      );
-      const valid = !isSlotOccupied(
-        snapped,
-        unit.sizeU,
-        visibleUnits,
-        unit.id,
-        (uid, orig) => getPositionU(rack.id, uid, orig),
-      );
-      setGhost({ positionU: snapped, sizeU: unit.sizeU, valid });
-    },
-    [rack.heightU, rack.id, visibleUnits, getPositionU],
-  );
-
-  const handleDropY = useCallback(
-    (unit: RackUnit, effectivePos: number, offsetY: number) => {
-      const snapped = snapPositionU(
-        effectivePos,
-        unit.sizeU,
-        rack.heightU,
-        offsetY,
-      );
-      const occupied = isSlotOccupied(
-        snapped,
-        unit.sizeU,
-        visibleUnits,
-        unit.id,
-        (uid, orig) => getPositionU(rack.id, uid, orig),
-      );
-
-      if (!occupied && snapped !== effectivePos) {
-        moveUnit(rack.id, unit.id, snapped);
-      }
-
-      if (occupied) {
-        /* Red flash for 220ms so the user sees the rejection, then clear. */
-        setGhost((g) => (g ? { ...g, valid: false } : null));
-        window.setTimeout(() => setGhost(null), 220);
-      } else {
-        setGhost(null);
-      }
-    },
-    [rack.heightU, rack.id, visibleUnits, getPositionU, moveUnit],
-  );
-
-  const animateYForUnit = useCallback(
-    (unit: RackUnit): number => {
-      const effective = getPositionU(rack.id, unit.id, unit.positionU);
-      return (unit.positionU - effective) * UNIT_HEIGHT_PX;
-    },
-    [rack.id, getPositionU],
-  );
-
   /* ── render ─────────────────────────────────────────────────────── */
 
   return (
     <motion.div
+      ref={setRackDragRef}
       layout
       onClick={handleRackClick}
-      animate={{ scale: baseScale, opacity: baseOpacity }}
+      animate={{
+        scale: isReordering ? baseScale * 1.05 : baseScale,
+        opacity: baseOpacity,
+        zIndex: isReordering ? 50 : 0,
+      }}
       whileHover={
-        isClickable && !isSelected ? { scale: baseScale * 1.04 } : undefined
+        isClickable && !isFocused && !dragInFlight && !isReordering
+          ? { scale: baseScale * 1.04 }
+          : undefined
       }
       transition={hardwareSpring}
       className={cn(
         "relative",
-        isClickable ? "cursor-pointer" : "cursor-default",
+        rack.kind === "standalone"
+          ? "cursor-default"
+          : "cursor-grab active:cursor-grabbing",
+        isReordering &&
+          "cursor-grabbing drop-shadow-[0_10px_28px_rgba(0,0,0,0.35)]",
       )}
+      {...rackDragListeners}
+      {...rackDragAttributes}
     >
       {/* Column label */}
       {columnLabel ? (
@@ -256,9 +199,9 @@ export function Rack({ rack, columnLabel }: RackProps) {
         </div>
       ) : null}
 
-      {/* Rack chrome buttons — visible when this rack is selected */}
+      {/* Reset — visible when this rack is selected, idle, and has edits */}
       <AnimatePresence>
-        {isSelected ? (
+        {isSelected && !dragInFlight && hasPendingEdits(rack.id) ? (
           <motion.div
             key="rack-chrome"
             initial={{ opacity: 0, y: 4 }}
@@ -267,45 +210,18 @@ export function Rack({ rack, columnLabel }: RackProps) {
             transition={{ duration: 0.18 }}
             className="pointer-events-auto absolute -top-5 right-0 flex items-center gap-1.5"
           >
-            {/* Reset — only when edits exist */}
-            {hasPendingEdits(rack.id) ? (
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.85 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  resetRack(rack.id);
-                }}
-                className="flex items-center text-white/60 hover:text-white"
-                aria-label="Reset rack layout"
-              >
-                <RotateCcw className="size-3" />
-              </motion.button>
-            ) : null}
-
-            {/* Edit / Done toggle */}
             <motion.button
               type="button"
               whileHover={{ scale: 1.2 }}
               whileTap={{ scale: 0.85 }}
               onClick={(e) => {
                 e.stopPropagation();
-                setIsEditMode((v) => !v);
+                resetRack(rack.id);
               }}
-              className={cn(
-                "flex items-center transition-colors",
-                isEditMode
-                  ? "text-white"
-                  : "text-white/60 hover:text-white",
-              )}
-              aria-label={isEditMode ? "Done editing" : "Edit node positions"}
+              className="flex items-center text-white/60 hover:text-white"
+              aria-label="Reset rack layout"
             >
-              {isEditMode ? (
-                <X className="size-3.5" />
-              ) : (
-                <Pencil className="size-3" />
-              )}
+              <RotateCcw className="size-3" />
             </motion.button>
           </motion.div>
         ) : null}
@@ -316,60 +232,61 @@ export function Rack({ rack, columnLabel }: RackProps) {
   );
 
   function renderFramedRack() {
+    const showGhost = ghost?.rackId === rack.id;
+
     return (
-      <RackFrame heightU={rack.heightU} slotColumnRef={slotColumnRef}>
-        {/* Ghost landing slot */}
-        {isEditMode && ghost ? (
-          <div
-            aria-hidden
-            className={cn(
-              "pointer-events-none absolute left-0 right-0 rounded-[2px] border transition-colors duration-100",
-              ghost.valid
-                ? "border-white/50 bg-white/15"
-                : "border-red-400/70 bg-red-400/20",
-            )}
-            style={{
-              top:
-                (rack.heightU - ghost.positionU - ghost.sizeU + 1) *
-                UNIT_HEIGHT_PX,
-              height: ghost.sizeU * UNIT_HEIGHT_PX,
-              zIndex: 25,
-            }}
-          />
-        ) : null}
+      <div ref={setDroppableRef} data-rack-id={rack.id}>
+        <RackFrame heightU={rack.heightU}>
+          {/* Ghost landing slot */}
+          {showGhost ? (
+            <div
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute left-0 right-0 rounded-[2px] border transition-colors duration-100",
+                ghost.valid
+                  ? "border-white/50 bg-white/15"
+                  : "border-red-400/70 bg-red-400/20",
+              )}
+              style={{
+                top:
+                  (rack.heightU - ghost.positionU - ghost.sizeU + 1) *
+                  UNIT_HEIGHT_PX,
+                height: ghost.sizeU * UNIT_HEIGHT_PX,
+                zIndex: 25,
+              }}
+            />
+          ) : null}
 
-        {visibleUnits.map((unit) => {
-          const subsystem = project.subsystems.find(
-            (s) => s.id === unit.subsystemId,
-          );
-          if (!subsystem) return null;
+          {placedUnits.map(({ unit, positionU }) => {
+            const subsystem = project.subsystems.find(
+              (s) => s.id === unit.subsystemId,
+            );
+            if (!subsystem) return null;
 
-          const effectivePos = getPositionU(rack.id, unit.id, unit.positionU);
-
-          return (
-            <RackNode
-              key={unit.id}
-              positionU={unit.positionU}
-              sizeU={unit.sizeU}
-              heightU={rack.heightU}
-              draggable={isEditMode}
-              dragConstraintsRef={slotColumnRef}
-              onDragY={(offsetY) => handleDragY(unit, effectivePos, offsetY)}
-              onDropY={(offsetY) => handleDropY(unit, effectivePos, offsetY)}
-              animateY={animateYForUnit(unit)}
-            >
-              {renderUnitBody(unit, subsystem.chassis.image, subsystem.chassis.name)}
-            </RackNode>
-          );
-        })}
-      </RackFrame>
+            return (
+              <DraggableRackNode
+                key={unit.id}
+                unit={unit}
+                rackId={rack.id}
+                positionU={positionU}
+                heightU={rack.heightU}
+                draggable={isSelected}
+                imageUrl={CHASSIS_IMAGE_URLS[subsystem.chassis.image]}
+                alt={subsystem.chassis.name}
+              >
+                {renderUnitBody(unit, subsystem.chassis.image, subsystem.chassis.name)}
+              </DraggableRackNode>
+            );
+          })}
+        </RackFrame>
+      </div>
     );
   }
 
   function renderStandalone() {
     return (
       <div className="flex flex-col items-center gap-1">
-        {visibleUnits.map((unit) => {
+        {placedUnits.map(({ unit }) => {
           const subsystem = project.subsystems.find(
             (s) => s.id === unit.subsystemId,
           );
@@ -389,14 +306,11 @@ export function Rack({ rack, columnLabel }: RackProps) {
     return (
       <motion.div
         onClick={(e) => handleUnitClick(e, unit.id, unit.subsystemId)}
-        whileHover={
-          isSelected && !isEditMode ? { scale: UNIT_HOVER_SCALE } : undefined
-        }
-        transition={SNAP_SPRING}
+        whileHover={isSelected ? { scale: UNIT_HOVER_SCALE } : undefined}
+        transition={HOVER_SPRING}
         className={cn(
           "group relative h-full w-full origin-center",
-          isSelected && !isEditMode && "cursor-pointer hover:z-10",
-          isEditMode && "cursor-inherit",
+          isSelected && "hover:z-10",
         )}
       >
         <img
@@ -405,7 +319,7 @@ export function Rack({ rack, columnLabel }: RackProps) {
           draggable={false}
           className="relative z-0 block h-full w-full object-fill"
         />
-        {isSelected && !isEditMode ? (
+        {isSelected ? (
           <span
             aria-hidden
             className={cn(
