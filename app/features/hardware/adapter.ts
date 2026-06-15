@@ -26,6 +26,7 @@ import {
 import type { NavItem } from "~/types/navigation";
 import type { HardwareProject, Subsystem } from "./types";
 import { adgsaProject } from "./projects/adgsa-ai";
+import { adgsaIbmProject } from "./projects/adgsa-ibm";
 import { avayaProject } from "./projects/avaya";
 
 const FAKE_PROJECT_ID = 1001;
@@ -87,6 +88,14 @@ function toDemoHistoryRow(
 }
 
 export const demoProjectHistoryRows: DemoProjectHistoryRow[] = [
+  toDemoHistoryRow(adgsaIbmProject, {
+    id: 1003,
+    submissionDeadline: "2026-06-15",
+    budgetEstimation: "$10M - $25M",
+    timeline: "18-month go-live",
+    proposalConfidence: 0.95,
+    quality: ["good", "good", "good", "good", "suggestion", "good"],
+  }),
   toDemoHistoryRow(adgsaProject, {
     id: 1002,
     submissionDeadline: "2026-06-15",

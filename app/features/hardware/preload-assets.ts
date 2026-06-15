@@ -55,6 +55,12 @@ import productF710 from "~/assets/hardware/products/PowerScale-F710.png";
 import productS5232 from "~/assets/hardware/products/PowerSwitch-S5232.png";
 import productSN2201 from "~/assets/hardware/products/Nvidia-SN2201.png";
 import productSN5600 from "~/assets/hardware/products/NVIDIA Spectrum-4 SN5600.png";
+/* ADGSA-AI (IBM / Lenovo) chassis — SN2201 is shared with ADGSA-AI above. */
+import productSR675 from "~/assets/hardware/products/Lenovo ThinkSystem SR675 V3.png";
+import productPowerS1022 from "~/assets/hardware/products/IBM Power S1022.png";
+import productScale6000 from "~/assets/hardware/products/IBM Storage Scale System 6000.png";
+import productQM9700 from "~/assets/hardware/products/NVIDIA QM9700 NDR 400.png";
+import productSN4600 from "~/assets/hardware/products/NVIDIA Spectrum-3 SN4600.jpg";
 
 import componentCpuVerstka from "~/assets/hardware/verstka/Component_CPU.png";
 import componentHddVerstka from "~/assets/hardware/verstka/Component_HDD.png";
@@ -114,6 +120,12 @@ const critical: PreloadAsset[] = [
   { href: productS5232, type: "image/png", priority: "high" },
   { href: productSN2201, type: "image/png", priority: "high" },
   { href: productSN5600, type: "image/png", priority: "high" },
+  /* ADGSA-AI (IBM / Lenovo) chassis (SN2201 shared and declared above) */
+  { href: productSR675, type: "image/png", priority: "high" },
+  { href: productPowerS1022, type: "image/png", priority: "high" },
+  { href: productScale6000, type: "image/png", priority: "high" },
+  { href: productQM9700, type: "image/png", priority: "high" },
+  { href: productSN4600, type: "image/jpeg", priority: "high" },
   { href: logoMarkSvg, type: "image/svg+xml", priority: "high" },
   { href: logoTextSvg, type: "image/svg+xml", priority: "high" },
 ];

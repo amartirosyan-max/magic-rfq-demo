@@ -64,7 +64,7 @@ export function CatalogEntryCard({
       onClick={onClick}
       whileHover={onClick ? { y: -1 } : undefined}
       className={cn(
-        "relative px-4 py-4 transition-colors",
+        "relative w-full min-w-0 max-w-full overflow-hidden px-4 py-4 transition-colors",
         "bg-white",
         // !bare &&
         //   inProposal &&
@@ -80,7 +80,7 @@ export function CatalogEntryCard({
           </h3>
           <StatusBadge status={entry.status} className="mt-1 block" />
           {entry.bestFor ? (
-            <p className="mt-1 text-[12.5px] text-slate-600">
+            <p className="mt-1 break-words text-[12.5px] text-slate-600">
               <span className="font-medium text-slate-500">Best for:</span>{" "}
               {entry.bestFor}
             </p>
@@ -106,14 +106,14 @@ export function CatalogEntryCard({
       ) : null}
 
       {entry.spec ? (
-        <p className="mt-3 text-[12.5px] leading-snug text-slate-500">
+        <p className="mt-3 break-words text-[12.5px] leading-snug text-slate-500">
           {entry.spec}
         </p>
       ) : null}
 
       <p
         className={cn(
-          "text-[13px] leading-relaxed text-slate-600",
+          "break-words text-[13px] leading-relaxed text-slate-600",
           entry.spec ? "mt-1" : "mt-3",
         )}
       >

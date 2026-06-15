@@ -27,6 +27,13 @@ import productS5232 from "~/assets/hardware/products/PowerSwitch-S5232.png";
 import productSN2201 from "~/assets/hardware/products/Nvidia-SN2201.png";
 import productSN5600 from "~/assets/hardware/products/NVIDIA Spectrum-4 SN5600.png";
 
+/* ADGSA-AI (IBM / Lenovo) project */
+import productSR675 from "~/assets/hardware/products/Lenovo ThinkSystem SR675 V3.png";
+import productPowerS1022 from "~/assets/hardware/products/IBM Power S1022.png";
+import productScale6000 from "~/assets/hardware/products/IBM Storage Scale System 6000.png";
+import productQM9700 from "~/assets/hardware/products/NVIDIA QM9700 NDR 400.png";
+import productSN4600 from "~/assets/hardware/products/NVIDIA Spectrum-3 SN4600.jpg";
+
 export const CHASSIS_IMAGE_URLS: Record<string, string> = {
   /* Avaya */
   "Dell-PowerEdge-R660.png": productR660,
@@ -41,4 +48,10 @@ export const CHASSIS_IMAGE_URLS: Record<string, string> = {
   "PowerSwitch-S5232.png": productS5232,
   "Nvidia-SN2201.png": productSN2201,
   "NVIDIA Spectrum-4 SN5600.png": productSN5600,
+  /* ADGSA-AI (IBM / Lenovo) — SN2201 reuses the entry above */
+  "Lenovo ThinkSystem SR675 V3.png": productSR675,
+  "IBM Power S1022.png": productPowerS1022,
+  "IBM Storage Scale System 6000.png": productScale6000,
+  "NVIDIA QM9700 NDR 400.png": productQM9700,
+  "NVIDIA Spectrum-3 SN4600.jpg": productSN4600,
 };

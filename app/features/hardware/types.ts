@@ -197,4 +197,17 @@ export interface HardwareProject {
    * is open in the cluster component view.
    */
   productAlternatives: Record<string, CatalogEntry[]>;
+  /**
+   * Right sidebar — L2 component-swap catalog, scoped by `subsystem id →
+   * component category`. When a (subsystem, category) is present here, the
+   * "swap this part" list for that chassis uses these project-specific
+   * SKUs instead of the shared `componentCatalog` in `catalog-data.ts`.
+   * Falls back to the shared catalog for any (subsystem, category) absent
+   * from this map. Optional — projects that don't define it behave exactly
+   * as before (shared catalog everywhere).
+   */
+  componentAlternatives?: Record<
+    string,
+    Partial<Record<ComponentCategory, CatalogEntry[]>>
+  >;
 }

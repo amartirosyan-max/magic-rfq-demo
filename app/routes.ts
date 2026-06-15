@@ -12,6 +12,7 @@ export default [
   // See app/docs/features/hardware-configurator/PROGRESS.md.
   route("avaya", "routes/avaya/index.tsx"),
   route("adgsa-ai", "routes/adgsa-ai/index.tsx"),
+  route("adgsa-ibm", "routes/adgsa-ibm/index.tsx"),
 
   layout("./auth/layout.tsx", [
     route("login", "routes/login.tsx"),

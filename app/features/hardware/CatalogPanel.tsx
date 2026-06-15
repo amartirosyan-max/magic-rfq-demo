@@ -29,6 +29,7 @@ import type {
   CatalogEntry,
   ComponentCategory,
   HardwareComponent,
+  HardwareProject,
   Subsystem,
 } from "./types";
 
@@ -52,9 +53,28 @@ const COMPONENT_ICON: Record<ComponentCategory, string> = {
 /*  Component-category → in-proposal SKU lookup                                */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Resolve the L2 "swap this part" catalog for a (subsystem, category).
+ * Prefers the project's own `componentAlternatives` (e.g. the IBM/Lenovo
+ * BoQ parts) and falls back to the shared `componentCatalog` when the
+ * project doesn't define that pairing.
+ */
+function resolveComponentCatalog(
+  project: HardwareProject,
+  subsystemId: string,
+  category: ComponentCategory,
+): CatalogEntry[] {
+  return (
+    project.componentAlternatives?.[subsystemId]?.[category] ??
+    componentCatalog[category]
+  );
+}
+
 function matchInstalledSku(
   category: ComponentCategory,
   components: HardwareComponent[],
+  /** Resolved catalog for this (subsystem, category). */
+  catalog: CatalogEntry[],
   /** When set, match against this BoQ row — not the first row in the category. */
   componentId?: string | null,
 ): string | null {
@@ -63,13 +83,11 @@ function matchInstalledSku(
     : components.find((c) => c.category === category);
   if (!row) return null;
 
-  const flagged = componentCatalog[category].find(
-    (e) => e.status === "in-proposal",
-  );
+  const flagged = catalog.find((e) => e.status === "in-proposal");
   if (flagged) return flagged.id;
 
   const desc = row.description.toLowerCase();
-  for (const entry of componentCatalog[category]) {
+  for (const entry of catalog) {
     const key = entry.name.split(" ")[0].toLowerCase();
     if (key && desc.includes(key)) return entry.id;
   }
@@ -81,6 +99,7 @@ function matchInstalledSku(
 /* -------------------------------------------------------------------------- */
 
 export function CatalogPanel() {
+  const project = useHardwareProject();
   const scope = useCatalogScope();
   const { effectiveComponents } = useComponentEdits();
   const {
@@ -139,7 +158,7 @@ export function CatalogPanel() {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
       {/* Hidden: catalog breadcrumb / back routing (uncomment to restore).
       <CatalogBreadcrumb
         scope={scope}
@@ -148,7 +167,7 @@ export function CatalogPanel() {
       />
       */}
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-4 pt-3">
+      <div className="min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-1 pb-4 pt-3">
         <AnimatePresence mode="wait">
           {scope.kind === "project" && (
             <ProjectCatalog
@@ -166,6 +185,11 @@ export function CatalogPanel() {
               installedId={matchInstalledSku(
                 activeCategory,
                 scope.subsystem.components,
+                resolveComponentCatalog(
+                  project,
+                  scope.subsystem.id,
+                  activeCategory,
+                ),
                 selectedComponentId,
               )}
             />
@@ -688,6 +712,7 @@ function ChassisOverview({
   scope: Extract<ReturnType<typeof useCatalogScope>, { kind: "chassis" }>;
   onPickCategory: (cat: ComponentCategory) => void;
 }) {
+  const project = useHardwareProject();
   const installedSet = useMemo(
     () => new Set(scope.subsystem.components.map((c) => c.category)),
     [scope.subsystem.components],
@@ -740,7 +765,9 @@ function ChassisOverview({
                   {componentCategoryLabel[cat]}
                 </span>
                 <span className="truncate text-[11px] text-slate-500">
-                  {componentCatalog[cat].length} options
+                  {resolveComponentCatalog(project, scope.subsystem.id, cat)
+                    .length}{" "}
+                  options
                 </span>
               </div>
             </motion.button>
@@ -777,7 +804,8 @@ function ComponentCategoryView({
   selectedComponentId: string | null;
   installedId: string | null;
 }) {
-  const list = componentCatalog[category];
+  const project = useHardwareProject();
+  const list = resolveComponentCatalog(project, subsystem.id, category);
   const {
     effectiveComponents,
     setQty,
